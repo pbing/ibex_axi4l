@@ -145,6 +145,6 @@ module ibex_soc
 
    axi4l_led
      #(.N (4))
-   u_axi4l_ledg
+   u_ledg
      (.axi (axis[2]), .led);
 endmodule

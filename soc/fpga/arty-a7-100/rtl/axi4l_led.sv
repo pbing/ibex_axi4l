@@ -13,6 +13,8 @@ module axi4l_led
    logic  wselect;  // write select
    logic  bvalid;
    logic  rvalid;
+   resp_t bresp;
+   resp_t rresp;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
@@ -22,7 +24,7 @@ module axi4l_led
          led <= axi.wdata[N-1:0];
 
    always_comb
-     if ((axi.awvalid && axi.wready) && (axi.wvalid && axi.wready))
+     if ((axi.awvalid && axi.awready) && (axi.wvalid && axi.wready))
        wselect = axi.awaddr[11:2] == 10'h000;
      else
        wselect = awaddr_l[11:2] == 10'h000;
@@ -35,11 +37,11 @@ module axi4l_led
      axi.awready = 1'b1,
      axi.wready  = 1'b1,
      axi.bvalid  = bvalid,
-     axi.bresp   = OKAY,
+     axi.bresp   = bresp,
      axi.arready = 1'b1,
      axi.rvalid  = rvalid,
      axi.rdata   = {{(dw-N){1'b0}}, led},
-     axi.rresp   = OKAY;
+     axi.rresp   = rresp;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
@@ -50,6 +52,13 @@ module axi4l_led
        else if (axi.bready)
          bvalid <= 1'b0;
 
+   always_ff @(posedge axi.aclk)
+     if (axi.awvalid && axi.awready)
+       if (axi.awaddr[11:2] == 10'h000)
+         bresp <= OKAY;
+       else
+         bresp <= SLVERR;
+
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
        rvalid <= 1'b0;
@@ -58,4 +67,11 @@ module axi4l_led
          rvalid <= 1'b1;
        else if (axi.rready)
          rvalid <= 1'b0;
+
+   always_ff @(posedge axi.aclk)
+     if (axi.arvalid && axi.arready)
+       if (axi.araddr[11:2] == 10'h000)
+         rresp <= OKAY;
+       else
+         rresp <= SLVERR;
 endmodule

@@ -35,15 +35,15 @@ static int usleep(unsigned long usec) {
 }
 
 int main(int argc, char **argv) {
-  volatile uint32_t *var = (volatile uint32_t *) 0x10000000;
-  *var = 0;
+  volatile uint32_t *led = (volatile uint32_t *) 0x10000000;
+  *led = 0;
 
   //asm("csrci 0x7c0, 1"); // disable icache
   asm("csrsi 0x7c0, 1"); // enable icache
 
-  while (1) {
+  for (;;) {
     usleep(1000 * 1000); // 1000 ms
     //usleep(1 * 1000); // 1 ms
-    *var = *var + 1;
+    *led = *led + 1;
   }
 }
