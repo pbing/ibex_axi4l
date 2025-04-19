@@ -35,7 +35,7 @@ module axi4l_dpramx32
        awaddr_l <= axi.awaddr;
 
    always_comb
-     if ((axi.awvalid && axi.wready) && (axi.wvalid && axi.wready))
+     if ((axi.awvalid && axi.awready) && (axi.wvalid && axi.wready))
        ram_waddr = axi.awaddr[addr_width+1:2];
      else
        ram_waddr = awaddr_l[addr_width+1:2];
