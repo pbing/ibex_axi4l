@@ -8,9 +8,9 @@ The instruction and data memory interfaces are converted to AXI4-Lite.
 - simulated with Verilator
 - implemented in Vivado
 - programmed on FPGA board
-- use debugger via BSCANE2
 
 To be done:
+- use debugger via BSCANE2
 - use debugger via JTAG
 
 ## Linting with Verilator
@@ -76,19 +76,7 @@ Type "apropos word" to search for commands related to "word"...
 Reading symbols from led.elf...
 Remote debugging using localhost:3333
 ```
-
-## Ibex memory control vs. Wishbone bus
-
-### Basic Memory Transaction
-<p align="center"><img src="doc/images/timing1.svg" width="650"></p>
-
-### Back-to-back Memory Transaction
-<p align="center"><img src="doc/images/timing2.svg" width="650"></p>
-
-### Slow Response Memory Transaction
-<p align="center"><img src="doc/images/timing3.svg" width="650"></p>
-
-### Timing
+### Cycles per Instruction (CPI)
 | Program    | Cycles | Instructions | CPI  |
 |------------|--------|--------------|------|
 | crc_32     | 54928  | 23689        | 2.32 |
