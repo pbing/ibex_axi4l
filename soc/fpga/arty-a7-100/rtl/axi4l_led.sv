@@ -27,7 +27,7 @@ module axi4l_led
      else
        wselect = awaddr_l[11:2] == 10'h000;
 
-   always_ff @(posedge axi.aclk or negedge axi.aresetn)
+   always_ff @(posedge axi.aclk)
      if (axi.awvalid && axi.awready)
        awaddr_l <= axi.awaddr;
 

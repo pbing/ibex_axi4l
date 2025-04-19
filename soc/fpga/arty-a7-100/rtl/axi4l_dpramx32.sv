@@ -30,7 +30,7 @@ module axi4l_dpramx32
       .d     (ram_data),
       .q     (ram_q));
 
-   always_ff @(posedge axi.aclk or negedge axi.aresetn)
+   always_ff @(posedge axi.aclk)
      if (axi.awvalid && axi.awready)
        awaddr_l <= axi.awaddr;
 

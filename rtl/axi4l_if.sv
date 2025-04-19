@@ -1,7 +1,5 @@
 /* AXI4-Lite interface */
 
-`default_nettype none
-
 interface axi4l_if
   (input logic aclk,
    input logic aresetn);
@@ -101,5 +99,3 @@ interface axi4l_if
       input  rdata,
       input  rresp);
 endinterface
-
-`resetall
