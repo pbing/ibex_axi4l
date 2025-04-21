@@ -90,7 +90,7 @@ The clock for the SOC was 50 MHz.
 
 | LUT  | Registers |
 |------|-----------|
-| 4830 | 2854      |
+| 5272 | 3007      |
 
 ## Recources
 - [WB2AXIP: Bus interconnects, bridges, and other components](https://github.com/ZipCPU/wb2axip/)
