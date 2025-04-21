@@ -4,8 +4,15 @@
  */
 
 module core2axi4l
-  (core_if.slave   core,
-   axi4l_if.master axi);
+  (
+`ifndef FORMAL
+   core_if.slave   core,
+   axi4l_if.master axi
+`else
+   core_if        core,
+   axi4l_if       axi
+`endif
+   );
 
    import axi4l_pkg::*;
 
