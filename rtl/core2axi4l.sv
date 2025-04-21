@@ -98,8 +98,8 @@ module core2axi4l
       endcase
    end
 
-   always_ff @(posedge axi.aclk or negedge axi.aresetn)
-     if (!axi.aresetn)
+   always_ff @(posedge core.clk or negedge core.rst_n)
+     if (!core.rst_n)
        state <= IDLE;
      else
        state <= state_next;
