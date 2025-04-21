@@ -11,19 +11,11 @@ module core2axi4l
 
    enum logic [2:0] {IDLE, READ_WAIT, WRITE_DATA, WRITE_ADDR, WRITE_WAIT} state, state_next;
 
-   logic clk;
-   logic rst_n;
-   logic valid;
-   logic granted;
-
-   assign clk   = axi.aclk;
-   assign rst_n = axi.aresetn;
-
    // main FSM
    always_comb begin
       state_next  = state;
-      granted     = 1'b0;
-      valid       = 1'b0;
+      core.gnt    = 1'b0;
+      core.rvalid = 1'b0;
       axi.awvalid = 1'b0;
       axi.arvalid = 1'b0;
       axi.rready  = 1'b0;
@@ -43,7 +35,7 @@ module core2axi4l
                axi.wvalid  = 1'b1;
                if (axi.awready)
                  if (axi.wready) begin
-                    granted = 1'b1;
+                    core.gnt = 1'b1;
                     state_next = WRITE_WAIT;
                  end
                  else
@@ -55,7 +47,7 @@ module core2axi4l
             else begin
                axi.arvalid = 1'b1;
                if (axi.arready) begin
-                  granted = 1'b1;
+                  core.gnt = 1'b1;
                   state_next = READ_WAIT;
                end
             end
@@ -66,7 +58,7 @@ module core2axi4l
           begin
              axi.wvalid = 1'b1;
              if (axi.wready) begin
-                granted = 1'b1;
+                core.gnt = 1'b1;
                 state_next = WRITE_WAIT;
              end
           end
@@ -78,7 +70,7 @@ module core2axi4l
           begin
              axi.awvalid = 1'b1;
              if (axi.awready) begin
-                granted = 1'b1;
+                core.gnt = 1'b1;
                 state_next = WRITE_WAIT;
              end
           end
@@ -89,7 +81,7 @@ module core2axi4l
           begin
              axi.bready = 1'b1;
              if (axi.bvalid) begin
-                valid = 1'b1;
+                core.rvalid = 1'b1;
                 state_next = IDLE;
              end
           end
@@ -97,7 +89,7 @@ module core2axi4l
         // we wait for the read response, address has been sent successfully
         READ_WAIT:
           if (axi.rvalid) begin
-             valid = 1'b1;
+             core.rvalid = 1'b1;
              axi.rready = 1'b1;
              state_next = IDLE;
           end
@@ -106,8 +98,8 @@ module core2axi4l
       endcase
    end
 
-   always_ff @(posedge clk or negedge rst_n)
-     if (!rst_n)
+   always_ff @(posedge axi.aclk or negedge axi.aresetn)
+     if (!axi.aresetn)
        state <= IDLE;
      else
        state <= state_next;
@@ -123,6 +115,4 @@ module core2axi4l
 
    assign core.rdata  = axi.rdata;
    assign core.err    = (axi.rvalid && (axi.rresp != OKAY)) || (axi.bvalid && (axi.bresp != OKAY));
-   assign core.rvalid = valid;
-   assign core.gnt    = granted;
 endmodule

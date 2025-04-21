@@ -11,5 +11,5 @@ package axi4l_pkg;
       enum logic {DATA, INSTRUCTION}        type_e;
    } prot_t;
 
-   typedef enum logic [1:0] {OKAY, EXOKAY, SLVERR, DECERR} resp_t;
+   typedef enum logic [1:0] {OKAY, EXOKAY, SLVERR, DECERR} resp_t /*verilator public*/;
 endpackage

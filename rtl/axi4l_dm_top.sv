@@ -81,16 +81,15 @@ module axi4l_dm_top
       .dmi_resp_ready_i     (dmi_resp_ready),
       .dmi_resp_o           (dmi_resp));
 
-   /* Wishbone */
    assign slave_core.gnt    = 1'b1;
    assign slave_core.rvalid = 1'b0; // don't care
    assign slave_core.err    = 1'b0;
 
-   slave2axi4l slave_core2axi4l
-     (.slave (slave_core),
-      .axi   (axis));
+   axi4l2core u_axi2core
+     (.core (slave_core),
+      .axi  (axis));
 
-   core2axi4l master_core2axi4l
-     (.core  (master_core),
-      .axi   (axim));
+   core2axi4l u_core2axi
+     (.core (master_core),
+      .axi  (axim));
 endmodule

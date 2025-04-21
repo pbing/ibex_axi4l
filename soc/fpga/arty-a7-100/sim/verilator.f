@@ -76,7 +76,7 @@
 ../../../../rtl/axi4l_pkg.sv
 ../../../../rtl/core_if.sv
 ../../../../rtl/core2axi4l.sv
-../../../../rtl/slave2axi4l.sv
+../../../../rtl/axi4l2core.sv
 ../../../../rtl/axi4l_dm_top.sv
 ../../../../rtl/axi4l_if.sv
 ../../../../rtl/axi4l_ibex_top.sv
