@@ -35,8 +35,8 @@ module axi4l_ibex_top
      parameter logic [SCRAMBLE_NONCE_W-1:0] RndCnstIbexNonce             = RndCnstIbexNonceDefault)
    (input  logic                         clk,          // Clock signal
     input  logic                         rst_n,        // Active-low asynchronous reset
-    axi4l_if.master                      instr_axi4l,  // AXI4-Lite interface for instruction memory
-    axi4l_if.master                      data_axi4l,   // AXI4-Lite interface for data memory
+    axi4l_if.master                      instr_axi,    // AXI4-Lite interface for instruction memory
+    axi4l_if.master                      data_axi,     // AXI4-Lite interface for data memory
 
     input  logic                         test_en,      // Test input, enables clock
     input  prim_ram_1p_pkg::ram_1p_cfg_t ram_cfg,
@@ -212,11 +212,11 @@ module axi4l_ibex_top
      instr_core.be    = '0,
      instr_core.wdata = '0;
 
-   core2axi4l instr_core2axi4l
+   core2axi4l instr_core2axi
      (.core  (instr_core),
-      .axi   (instr_axi4l));
+      .axi   (instr_axi));
 
-   core2axi4l data_core2axi4l
+   core2axi4l data_core2axi
      (.core  (data_core),
-      .axi   (data_axi4l));
+      .axi   (data_axi));
 endmodule

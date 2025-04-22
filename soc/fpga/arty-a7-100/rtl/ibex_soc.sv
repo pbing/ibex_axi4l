@@ -52,11 +52,11 @@ module ibex_soc
    axi4l_ibex_top
      #(.RegFile (RegFileFPGA),
        .ICache  (ICache))
-   u_ibex_top
+   u_axi_ibex_top
      (.clk,
       .rst_n,
-      .instr_axi4l             (axim[2]),
-      .data_axi4l              (axim[1]),
+      .instr_axi            (axim[2]),
+      .data_axi             (axim[1]),
 
       .test_en              (1'b0),
       .ram_cfg              ('0),
