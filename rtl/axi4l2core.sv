@@ -17,7 +17,7 @@ module axi4l2core
    resp_t rresp_buf;
    data_t rdata_buf;
 
-   enum logic [2:0] {IDLE, READ_WAIT[2], WRITE_DATA, WRITE_WAIT[2]} state, state_next;
+   enum logic [2:0] {IDLE, READ_WAIT[2], WRITE_WAIT[2]} state, state_next;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
@@ -52,15 +52,17 @@ module axi4l2core
                 state_next = READ_WAIT0;
              end
           end
-          else if (axi.awvalid) begin
-             core.req = 1'b1;
-             core.addr = axi.awaddr;
-             core.we = 1'b1;
-             if (core.gnt) begin
-                axi.awready = 1'b1;
-                state_next = WRITE_DATA;
-             end
-          end
+          else
+            if (axi.awvalid && axi.wvalid) begin
+               core.req = 1'b1;
+               core.addr = axi.awaddr;
+               core.we = 1'b1;
+               if (core.gnt) begin
+                  axi.awready = 1'b1;
+                  axi.wready = 1'b1;
+                  state_next = WRITE_WAIT0;
+               end
+            end
 
         READ_WAIT0:
           if (core.rvalid)
@@ -73,13 +75,6 @@ module axi4l2core
                state_next = IDLE;
           end
 
-        WRITE_DATA:
-          begin
-             axi.wready = 1'b1;
-             if (axi.wvalid)
-               state_next = WRITE_WAIT0;
-          end
-
         WRITE_WAIT0:
           if (core.rvalid)
             state_next = WRITE_WAIT1;
@@ -90,6 +85,8 @@ module axi4l2core
              if (axi.bready)
                state_next = IDLE;
           end
+
+        default state_next = IDLE;
       endcase
    end
 
