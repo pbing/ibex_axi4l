@@ -30,16 +30,16 @@ module axi4l2core
       core.req    = 1'b0;
       core.we     = 1'b0;
       core.be     = axi.wstrb;
-      core.addr   = '0;
+      core.addr   = axi.araddr;
       core.wdata  = axi.wdata;
       axi.awready = 1'b0;
       axi.wready  = 1'b0;
       axi.bvalid  = 1'b0;
-      axi.bresp   = bresp_buf;
+      axi.bresp   = OKAY;
       axi.arready = 1'b0;
       axi.rvalid  = 1'b0;
-      axi.rdata   = rdata_buf;
-      axi.rresp   = rresp_buf;
+      axi.rdata   = core.rdata;
+      axi.rresp   = OKAY;
 
       case (state)
         IDLE:
@@ -65,23 +65,39 @@ module axi4l2core
             end
 
         READ_WAIT0:
-          if (core.rvalid)
-            state_next = READ_WAIT1;
+          if (core.rvalid) begin
+             axi.rvalid = 1'b1;
+             axi.rresp = resp(core.err);
+             axi.rdata = core.rdata;
+             if (axi.rready)
+               state_next = IDLE;
+             else
+               state_next = READ_WAIT1;
+          end
 
         READ_WAIT1:
           begin
              axi.rvalid = 1'b1;
+             axi.rresp = rresp_buf;
+             axi.rdata = rdata_buf;
              if (axi.rready)
                state_next = IDLE;
           end
 
         WRITE_WAIT0:
-          if (core.rvalid)
-            state_next = WRITE_WAIT1;
+          if (core.rvalid) begin
+             axi.bvalid = 1'b1;
+             axi.bresp = resp(core.err);
+             if (axi.bready)
+               state_next = IDLE;
+             else
+               state_next = WRITE_WAIT1;
+          end
 
         WRITE_WAIT1:
           begin
              axi.bvalid = 1'b1;
+             axi.bresp = bresp_buf;
              if (axi.bready)
                state_next = IDLE;
           end
@@ -93,11 +109,15 @@ module axi4l2core
    /* Buffer all responses because core.rvalid is only active for one clock cycle. */
    always_ff @(posedge axi.aclk)
      if ((state == WRITE_WAIT0) && core.rvalid)
-       bresp_buf <= core.err ? SLVERR : OKAY;
+       bresp_buf <= resp(core.err);
 
    always_ff @(posedge axi.aclk)
      if ((state == READ_WAIT0) && core.rvalid) begin
-        rresp_buf <= core.err ? SLVERR : OKAY;
+        rresp_buf <= resp(core.err);
         rdata_buf <= core.rdata;
      end
+
+   function resp_t resp(input logic err);
+      return err ? SLVERR : OKAY;
+   endfunction
 endmodule
