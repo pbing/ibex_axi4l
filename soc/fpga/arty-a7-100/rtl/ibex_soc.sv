@@ -1,15 +1,21 @@
 /* SoC Toplevel */
 
 module ibex_soc
- #(parameter bit WBInterconnet = 1'b1, // 0:shared, 1:crossbar
-   parameter bit ICache        = 1'b1) // 0:prefetch buffer, 1:instruction cache
-  (input  wire       clk100mhz,
+  #(parameter bit ICache = 1'b1) // 0:prefetch buffer, 1:instruction cache
+   (input  logic       clk100mhz,
+    input  logic       ck_rst_n,
 
-   input  wire [3:0] sw,
-   output wire [3:0] led,
-   input  wire [3:0] btn,
-
-   input  wire       ck_rst_n);
+    input  logic [3:0] sw,
+    output logic [3:0] led,
+    input  logic [3:0] btn
+`ifndef SYNTHESIS
+    input  logic       tck,
+    input  logic       trst_n,
+    input  logic       tms,
+    input  logic       tdi,
+    output wire        tdo
+`endif
+    );
 
    import ibex_pkg::*;
 
@@ -39,6 +45,13 @@ module ibex_soc
    logic          dmi_resp_valid;
    logic          dmi_resp_ready;
    dm::dmi_resp_t dmi_resp;
+
+`ifndef SYNTHESIS
+   logic          tdo_o;
+   logic          tdo_oe;
+
+   assign tdo = tdo_oe ? tdo_o : 1'bz;
+`endif
 
    axi4l_if axim[3] (.aclk (clk), .aresetn (rst_n));
    axi4l_if axis[3] (.aclk (clk), .aresetn (rst_n));
@@ -84,7 +97,7 @@ module ibex_soc
       .alert_major_internal (),
       .alert_major_bus      (),
       .core_sleep           (),
-      
+
       .scan_rst_n           (1'b0));
 
    axi4l_dm_top u_dm_top
@@ -121,17 +134,17 @@ module ibex_soc
       .dmi_req_o        (dmi_req),
       .dmi_req_valid_o  (dmi_req_valid),
       .dmi_req_ready_i  (dmi_req_ready),
-      
+
       .dmi_resp_i       (dmi_resp),
       .dmi_resp_ready_o (dmi_resp_ready),
       .dmi_resp_valid_i (dmi_resp_valid),
-      
-      .tck_i            (1'b0),
-      .tms_i            (1'b0),
-      .trst_ni          (1'b0),
-      .td_i             (1'b0),
-      .td_o             (),
-      .tdo_oe_o         ());
+
+      .tck_i            (tck),
+      .tms_i            (tms),
+      .trst_ni          (trst_n),
+      .td_i             (tdi),
+      .td_o             (tdo_o),
+      .tdo_oe_o         (tdo_oe));
 
    axi4l_interconnect
      #(.numm      (3),
