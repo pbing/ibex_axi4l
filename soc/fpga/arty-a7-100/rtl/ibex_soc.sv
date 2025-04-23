@@ -9,6 +9,7 @@ module ibex_soc
     output logic [3:0] led,
     input  logic [3:0] btn
 `ifndef SYNTHESIS
+    ,
     input  logic       tck,
     input  logic       trst_n,
     input  logic       tms,
