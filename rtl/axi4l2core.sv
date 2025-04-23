@@ -17,7 +17,7 @@ module axi4l2core
    resp_t rresp_buf;
    data_t rdata_buf;
 
-   enum logic [2:0] {IDLE, READ_WAIT[2], WRITE_WAIT[2]} state, state_next;
+   enum logic [2:0] {IDLE, READ, READ_WAIT[2], WRITE, WRITE_WAIT[2]} state, state_next;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
@@ -51,6 +51,8 @@ module axi4l2core
                 axi.arready = 1'b1;
                 state_next = READ_WAIT0;
              end
+             else
+               state_next = READ;
           end
           else
             if (axi.awvalid && axi.wvalid) begin
@@ -62,7 +64,20 @@ module axi4l2core
                   axi.wready = 1'b1;
                   state_next = WRITE_WAIT0;
                end
+               else
+                 state_next = WRITE;
             end
+
+        READ:
+          begin
+             core.req = 1'b1;
+             core.addr = axi.araddr;
+             core.we = 1'b0;
+             if (core.gnt) begin
+                axi.arready = 1'b1;
+                state_next = READ_WAIT0;
+             end
+          end
 
         READ_WAIT0:
           if (core.rvalid) begin
@@ -82,6 +97,18 @@ module axi4l2core
              axi.rdata = rdata_buf;
              if (axi.rready)
                state_next = IDLE;
+          end
+
+        WRITE:
+          begin
+             core.req = 1'b1;
+             core.addr = axi.awaddr;
+             core.we = 1'b1;
+             if (core.gnt) begin
+                axi.awready = 1'b1;
+                axi.wready = 1'b1;
+                state_next = WRITE_WAIT0;
+             end
           end
 
         WRITE_WAIT0:
