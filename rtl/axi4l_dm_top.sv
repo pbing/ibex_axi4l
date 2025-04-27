@@ -82,7 +82,7 @@ module axi4l_dm_top
       .dmi_resp_o           (dmi_resp));
 
    assign slave_core.gnt    = 1'b1;
-   assign slave_core.rvalid = 1'b0; // don't care
+   assign slave_core.rvalid = 1'b1;
    assign slave_core.err    = 1'b0;
 
    axi4l2core u_axi2core
