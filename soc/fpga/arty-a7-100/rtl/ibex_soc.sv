@@ -54,8 +54,8 @@ module ibex_soc
    assign tdo = tdo_oe ? tdo_o : 1'bz;
 `else
    logic tck    = 1'b0;
-   logic tms    = 1'b0;
-   logic trst_n = 1'b0;
+   logic tms    = 1'b1;
+   logic trst_n = 1'b1;
    logic tdi    = 1'b0;
    logic tdo_o;
    logic tdo_oe;
