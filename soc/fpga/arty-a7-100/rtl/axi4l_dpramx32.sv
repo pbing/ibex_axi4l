@@ -1,23 +1,41 @@
-/* Dual port 32 bit RAM with AXI4_Lite interface */
+/* Dual port 32 bit RAM with AXI4_Lite interface
+ *
+ * https://zipcpu.com/blog/2019/01/12/demoaxilite.html
+ * https://github.com/ZipCPU/wb2axip/blob/master/rtl/demoaxi.v
+ */
+
 
 module axi4l_dpramx32
   #(parameter size = 'h80)
-   (axi4l_if.slave axi);
+   (
+`ifndef FORMAL
+    axi4l_if.slave axi
+`else
+    axi4l_if       axi
+`endif
+    );
 
    import axi4l_pkg::*;
 
-   localparam addr_width = $clog2(size) - 2;
+   localparam ram_aw = $clog2(size) - 2;
 
-   logic [addr_width - 1:0] ram_waddr;     // RAM write address
-   logic [addr_width - 1:0] ram_raddr;     // RAM read address
-   logic                    ram_ce;
-   logic [3:0]              ram_we;
-   logic [31:0]             ram_data;
-   logic [31:0]             ram_q;
-   logic                    bvalid;
-   logic                    rvalid;
-   addr_t                   awaddr_l;
+   logic [ram_aw-1:0] ram_waddr;     // RAM write address
+   logic [ram_aw-1:0] ram_raddr;     // RAM read address
+   logic              ram_ce;
+   logic [3:0]        ram_we;
+   logic [31:0]       ram_data;
+   logic [31:0]       ram_q;
 
+   logic  valid_write_address;
+   logic  valid_write_data;
+   logic  write_response_stall;
+   addr_t pre_waddr, waddr;
+   addr_t pre_wdata, wdata;
+   strb_t pre_wstrb, wstrb;
+
+   logic  valid_read_address;
+   logic  read_response_stall;
+   addr_t pre_raddr, raddr;
 
    dpramx32
      #(.size(size))
@@ -30,48 +48,124 @@ module axi4l_dpramx32
       .d     (ram_data),
       .q     (ram_q));
 
+   assign
+     ram_waddr = waddr[ram_aw-1:2],
+     ram_raddr = raddr[ram_aw-1:2],
+     ram_ce    = 1'b1,
+     ram_data  = wdata;
+
+   // --------------------------------------------------------------------------
+   // Write channels
+   // --------------------------------------------------------------------------
+
+   assign
+     valid_write_address  = axi.awvalid || !axi.awready,
+     valid_write_data     = axi.wvalid  || !axi.wready,
+     write_response_stall = axi.bvalid  && !axi.bready;
+
    always_ff @(posedge axi.aclk)
-     if (axi.awvalid && axi.awready)
-       awaddr_l <= axi.awaddr;
+     if (!axi.aresetn)
+       axi.awready <= 1'b1;
+     else if (write_response_stall)
+       axi.awready <= !valid_write_address;
+     else if (valid_write_data)
+       axi.awready <= 1'b1;
+     else
+       axi.awready <= axi.awready && !axi.awvalid;
+
+   always_ff @(posedge axi.aclk)
+     if (!axi.aresetn)
+       axi.wready <= 1'b1;
+     else if (write_response_stall)
+       axi.wready <= !valid_write_data;
+     else if (valid_write_address)
+       axi.wready <= 1'b1;
+     else
+       axi.wready <= axi.wready && !axi.wvalid;
+
+   always_ff @(posedge axi.aclk)
+     if (axi.awready)
+       pre_waddr <= axi.awaddr;
+
+   always_ff @(posedge axi.aclk)
+     if (axi.wready)
+       begin
+          pre_wdata <= axi.wdata;
+          pre_wstrb <= axi.wstrb;
+       end
 
    always_comb
-     if ((axi.awvalid && axi.awready) && (axi.wvalid && axi.wready))
-       ram_waddr = axi.awaddr[addr_width+1:2];
+     if (!axi.awready)
+       waddr = pre_waddr;
      else
-       ram_waddr = awaddr_l[addr_width+1:2];
+       waddr = axi.awaddr;
 
-   assign ram_raddr = axi.araddr[addr_width+1:2];
+   always_comb
+     if (!axi.wready)
+       begin
+          wstrb = pre_wstrb;
+          wdata = pre_wdata;
+       end else begin
+          wstrb = axi.wstrb;
+          wdata = axi.wdata;
+       end
 
-   assign
-     ram_ce   = 1'b1,
-     ram_we   = {4{axi.wvalid & axi.wready}} & axi.wstrb,
-     ram_data = axi.wdata;
+   always_comb
+     if (!write_response_stall && valid_write_address && valid_write_data)
+       ram_we = wstrb;
+     else
+       ram_we = '0;
 
-   assign
-     axi.awready = 1'b1,
-     axi.wready  = 1'b1,
-     axi.bvalid  = bvalid,
-     axi.bresp   = OKAY,
-     axi.arready = 1'b1,
-     axi.rvalid  = rvalid,
-     axi.rdata   = ram_q,
-     axi.rresp   = OKAY;
-
-   always_ff @(posedge axi.aclk or negedge axi.aresetn)
+   always_ff @(posedge axi.aclk )
      if (!axi.aresetn)
-       bvalid <= 1'b0;
+       axi.bvalid <= 1'b0;
      else
-       if (axi.wvalid && axi.wready)
-         bvalid <= 1'b1;
+       if (valid_write_address && valid_write_data)
+         axi.bvalid <= 1'b1;
        else if (axi.bready)
-         bvalid <= 1'b0;
+         axi.bvalid <= 1'b0;
+
+   assign axi.bresp = OKAY;
+
+   // --------------------------------------------------------------------------
+   // Read channels
+   // --------------------------------------------------------------------------
+
+   assign
+     valid_read_address  = axi.arvalid || !axi.arready,
+     read_response_stall = axi.rvalid && !axi.rready;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
-       rvalid <= 1'b0;
+       axi.rvalid <= 1'b0;
      else
-       if (axi.arvalid && axi.arready)
-         rvalid <= 1'b1;
-       else if (axi.rready)
-         rvalid <= 1'b0;
+       if (read_response_stall)
+         axi.rvalid <= 1'b1;
+       else if (valid_read_address)
+         axi.rvalid <= 1'b1;
+       else
+         axi.rvalid <= 1'b0;
+
+   always_ff @(posedge axi.aclk)
+     if (axi.arready)
+       pre_raddr <= axi.araddr;
+
+   always_comb
+     if (!axi.arready)
+       raddr = pre_raddr;
+     else
+       raddr = axi.araddr;
+
+   assign
+     axi.rdata = ram_q,
+     axi.rresp = OKAY;
+
+   always_ff @(posedge axi.aclk)
+     if (!axi.aresetn)
+       axi.arready <= 1'b1;
+     else
+       if (read_response_stall)
+         axi.arready <= !valid_read_address;
+       else
+         axi.arready <= 1'b1;
 endmodule
