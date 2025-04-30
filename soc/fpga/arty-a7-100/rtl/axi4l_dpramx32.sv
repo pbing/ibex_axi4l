@@ -36,6 +36,7 @@ module axi4l_dpramx32
    logic  valid_read_address;
    logic  read_response_stall;
    addr_t pre_raddr, raddr;
+   data_t buf_rdata;
 
    dpramx32
      #(.size(size))
@@ -156,9 +157,17 @@ module axi4l_dpramx32
      else
        raddr = axi.araddr;
 
-   assign
-     axi.rdata = ram_q,
-     axi.rresp = OKAY;
+   always_ff @(posedge axi.aclk)
+     if (!read_response_stall && valid_read_address)
+       buf_rdata <= ram_q;
+
+   always_comb
+     if (axi.rready)
+       axi.rdata = ram_q;
+     else
+       axi.rdata = buf_rdata;
+
+   assign axi.rresp = OKAY;
 
    always_ff @(posedge axi.aclk)
      if (!axi.aresetn)
