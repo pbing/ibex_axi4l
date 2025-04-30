@@ -19,13 +19,6 @@ module axi4l_dpramx32
 
    localparam ram_aw = $clog2(size) - 2;
 
-   logic [ram_aw-1:0] ram_waddr;     // RAM write address
-   logic [ram_aw-1:0] ram_raddr;     // RAM read address
-   logic              ram_ce;
-   logic [3:0]        ram_we;
-   logic [31:0]       ram_data;
-   logic [31:0]       ram_q;
-
    logic  valid_write_address;
    logic  valid_write_data;
    logic  write_response_stall;
@@ -36,24 +29,15 @@ module axi4l_dpramx32
    logic  valid_read_address;
    logic  read_response_stall;
    addr_t pre_raddr, raddr;
-   data_t buf_rdata;
 
-   dpramx32
-     #(.size(size))
-   dpram
-     (.clk   (axi.aclk),
-      .waddr (ram_waddr),
-      .raddr (ram_raddr),
-      .ce    (ram_ce),
-      .we    (ram_we),
-      .d     (ram_data),
-      .q     (ram_q));
+   // --------------------------------------------------------------------------
+   // RAM
+   // --------------------------------------------------------------------------
 
-   assign
-     ram_waddr = waddr[ram_aw-1:2],
-     ram_raddr = raddr[ram_aw-1:2],
-     ram_ce    = 1'b1,
-     ram_data  = wdata;
+   (* ram_style = "block" *) data_t mem[size>>2];
+
+   initial
+     $readmemh("dpramx32.vmem", mem);
 
    // --------------------------------------------------------------------------
    // Write channels
@@ -89,11 +73,10 @@ module axi4l_dpramx32
        pre_waddr <= axi.awaddr;
 
    always_ff @(posedge axi.aclk)
-     if (axi.wready)
-       begin
-          pre_wdata <= axi.wdata;
-          pre_wstrb <= axi.wstrb;
-       end
+     if (axi.wready) begin
+        pre_wdata <= axi.wdata;
+        pre_wstrb <= axi.wstrb;
+     end
 
    always_comb
      if (!axi.awready)
@@ -102,20 +85,22 @@ module axi4l_dpramx32
        waddr = axi.awaddr;
 
    always_comb
-     if (!axi.wready)
-       begin
-          wstrb = pre_wstrb;
-          wdata = pre_wdata;
-       end else begin
-          wstrb = axi.wstrb;
-          wdata = axi.wdata;
-       end
+     if (!axi.wready) begin
+        wstrb = pre_wstrb;
+        wdata = pre_wdata;
+     end
+     else begin
+        wstrb = axi.wstrb;
+        wdata = axi.wdata;
+     end
 
-   always_comb
-     if (!write_response_stall && valid_write_address && valid_write_data)
-       ram_we = wstrb;
-     else
-       ram_we = '0;
+   always @(posedge axi.aclk)
+     if (!write_response_stall && valid_write_address && valid_write_data) begin
+        if (wstrb[0]) mem[waddr[ram_aw-1:2]][7:0]   <= wdata[7:0];
+        if (wstrb[1]) mem[waddr[ram_aw-1:2]][15:8]  <= wdata[15:8];
+        if (wstrb[2]) mem[waddr[ram_aw-1:2]][23:16] <= wdata[23:16];
+        if (wstrb[3]) mem[waddr[ram_aw-1:2]][31:24] <= wdata[31:24];
+     end
 
    always_ff @(posedge axi.aclk )
      if (!axi.aresetn)
@@ -157,15 +142,9 @@ module axi4l_dpramx32
      else
        raddr = axi.araddr;
 
-   always_ff @(posedge axi.aclk)
+   always @(posedge axi.aclk)
      if (!read_response_stall && valid_read_address)
-       buf_rdata <= ram_q;
-
-   always_comb
-     if (axi.rready)
-       axi.rdata = ram_q;
-     else
-       axi.rdata = buf_rdata;
+       axi.rdata <= mem[raddr[ram_aw-1:2]];
 
    assign axi.rresp = OKAY;
 
