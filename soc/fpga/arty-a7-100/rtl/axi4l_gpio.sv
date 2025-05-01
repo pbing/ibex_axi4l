@@ -13,7 +13,8 @@ module axi4l_gpio
 `endif
    input  logic [31:0] gpio_i,
    output logic [31:0] gpio_o,
-   output logic [31:0] gpio_en
+   output logic [31:0] gpio_en,
+   output logic        gpio_irq
    );
 
    import axi4l_pkg::*;
@@ -47,6 +48,11 @@ module axi4l_gpio
          .data_i (gpio_i[i]),
          .data_o (gpio_sync[i]));
    end
+
+   // --------------------------------------------------------------------------
+   // Interrupt
+   // --------------------------------------------------------------------------
+   assign gpio_irq = |gpio_sync;
 
    // --------------------------------------------------------------------------
    // Write channels

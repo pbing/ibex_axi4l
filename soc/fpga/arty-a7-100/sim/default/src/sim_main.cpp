@@ -10,6 +10,8 @@ int main(int argc, char **argv) {
   const std::unique_ptr<Vibex_soc> top{new Vibex_soc{contextp.get(), "TOP"}};
   top->ck_rst_n = 1;
   top->clk100mhz = 0;
+  top->sw = 1;
+  top->btn = 0;
   top->eval();
 
   const std::unique_ptr<VerilatedFstC> tfp{new VerilatedFstC};
@@ -28,6 +30,13 @@ int main(int argc, char **argv) {
         top->ck_rst_n = 1; // Deassert reset
       }
     }
+
+
+   if (contextp->time() > 100000 && contextp->time() < 110000) {
+     top->btn = 1;
+   } else {
+     top->btn = 0;
+   }
 
     top->eval();
     tfp->dump(contextp->time());

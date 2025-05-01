@@ -57,6 +57,8 @@ module ibex_soc
    logic          dmi_resp_ready;
    dm::dmi_resp_t dmi_resp;
 
+   logic          btn_irq;
+
 `ifndef SYNTHESIS
    logic tdo_o;
    logic tdo_oe;
@@ -100,7 +102,7 @@ module ibex_soc
       .irq_software         (1'b0),
       .irq_timer            (1'b0),
       .irq_external         (1'b0),
-      .irq_fast             (15'h0000),
+      .irq_fast             ({btn_irq, 14'h0000}),
       .irq_nm               (1'b0),
 
       .scramble_key_valid   (1'b0),
@@ -223,5 +225,5 @@ module ibex_soc
    // --------------------------------------------------------------------------------
    wire [31:0] btn_gpio_i = {28'h0000000, btn};
 
-   axi4l_gpio u_btn (.axi(axis[4]), .gpio_i(btn_gpio_i), .gpio_o(), .gpio_en());
+   axi4l_gpio u_btn (.axi(axis[4]), .gpio_i(btn_gpio_i), .gpio_o(), .gpio_en(), .gpio_irq(btn_irq));
 endmodule
