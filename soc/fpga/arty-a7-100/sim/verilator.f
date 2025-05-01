@@ -68,7 +68,8 @@
 ../../../../riscv-dbg/src/dm_top.sv
 ../../../../riscv-dbg/src/dmi_cdc.sv
 ../../../../riscv-dbg/src/dmi_intf.sv
-../../../../riscv-dbg/src/dmi_bscane_tap.sv
+//../../../../riscv-dbg/src/dmi_bscane_tap.sv
+../../../../riscv-dbg/src/dmi_jtag_tap.sv
 ../../../../riscv-dbg/src/dmi_jtag.sv
 ../../../../riscv-dbg/debug_rom/debug_rom_one_scratch.sv
 ../../../../riscv-dbg/debug_rom/debug_rom.sv
@@ -85,12 +86,13 @@
 ../../../../wb2axip/rtl/skidbuffer.v
 ../../../../wb2axip/rtl/axilxbar.v
 
-../../../../soc/fpga/arty-a7-100/lib/verilog/clkgen_50mhz.sv
 ../../../../soc/fpga/arty-a7-100/lib/verilog/BSCANE2.sv
+../../../../soc/fpga/arty-a7-100/lib/verilog/clkgen_50mhz.sv
 ../../../../soc/fpga/arty-a7-100/rtl/axi4l_dpramx32.sv
+../../../../soc/fpga/arty-a7-100/rtl/axi4l_gpio.sv
 ../../../../soc/fpga/arty-a7-100/rtl/axi4l_interconnect.sv
-../../../../soc/fpga/arty-a7-100/rtl/axi4l_led.sv
 ../../../../soc/fpga/arty-a7-100/rtl/crg.sv
 ../../../../soc/fpga/arty-a7-100/rtl/dpramx32.sv
+../../../../soc/fpga/arty-a7-100/rtl/sync_data.sv
 ../../../../soc/fpga/arty-a7-100/rtl/sync_reset.sv
 ../../../../soc/fpga/arty-a7-100/rtl/ibex_soc.sv

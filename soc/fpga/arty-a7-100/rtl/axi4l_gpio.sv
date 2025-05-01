@@ -1,23 +1,27 @@
-/* Dual port 32 bit RAM with AXI4_Lite interface
+/* GPIO
  *
  * https://zipcpu.com/blog/2019/01/12/demoaxilite.html
  * https://github.com/ZipCPU/wb2axip/blob/master/rtl/demoaxi.v
  */
 
-
-module axi4l_dpramx32
-  #(parameter size = 'h80)
-   (
+module axi4l_gpio
+  (
 `ifndef FORMAL
-    axi4l_if.slave axi
+   axi4l_if.slave      axi,
 `else
-    axi4l_if       axi
+   axi4l_if            axi,
 `endif
-    );
+   input  logic [31:0] gpio_i,
+   output logic [31:0] gpio_o,
+   output logic [31:0] gpio_en
+   );
 
    import axi4l_pkg::*;
 
-   localparam ram_aw = $clog2(size) - 2;
+   localparam [11:2] reg_data = 10'h000,
+                     reg_dir  = 10'b001;
+
+   logic [31:0] gpio_sync;
 
    logic  valid_write_address;
    logic  valid_write_data;
@@ -31,13 +35,18 @@ module axi4l_dpramx32
    addr_t pre_raddr, raddr;
 
    // --------------------------------------------------------------------------
-   // RAM
+   // Synchronizer
    // --------------------------------------------------------------------------
 
-   (* ram_style = "block" *) data_t mem[size>>2];
-
-   initial
-     $readmemh("dpramx32.vmem", mem);
+   for (genvar i = 0; i < 32; i += 1) begin
+      sync_data
+        #(.N(2))
+      u_sync
+        (.clk    (axi.aclk),
+         .rst_n  (axi.aresetn),
+         .data_i (gpio_i[i]),
+         .data_o (gpio_sync[i]));
+   end
 
    // --------------------------------------------------------------------------
    // Write channels
@@ -73,10 +82,11 @@ module axi4l_dpramx32
        pre_waddr <= axi.awaddr;
 
    always_ff @(posedge axi.aclk)
-     if (axi.wready) begin
-        pre_wdata <= axi.wdata;
-        pre_wstrb <= axi.wstrb;
-     end
+     if (axi.wready)
+       begin
+          pre_wdata <= axi.wdata;
+          pre_wstrb <= axi.wstrb;
+       end
 
    always_comb
      if (!axi.awready)
@@ -85,22 +95,33 @@ module axi4l_dpramx32
        waddr = axi.awaddr;
 
    always_comb
-     if (!axi.wready) begin
-        wstrb = pre_wstrb;
-        wdata = pre_wdata;
-     end
-     else begin
-        wstrb = axi.wstrb;
-        wdata = axi.wdata;
-     end
+     if (!axi.wready)
+       begin
+          wstrb = pre_wstrb;
+          wdata = pre_wdata;
+       end else begin
+          wstrb = axi.wstrb;
+          wdata = axi.wdata;
+       end
 
-   always @(posedge axi.aclk)
-     if (!write_response_stall && valid_write_address && valid_write_data) begin
-        if (wstrb[0]) mem[waddr[ram_aw+1:2]][7:0]   <= wdata[7:0];
-        if (wstrb[1]) mem[waddr[ram_aw+1:2]][15:8]  <= wdata[15:8];
-        if (wstrb[2]) mem[waddr[ram_aw+1:2]][23:16] <= wdata[23:16];
-        if (wstrb[3]) mem[waddr[ram_aw+1:2]][31:24] <= wdata[31:24];
-     end
+   always_ff @(posedge axi.aclk )
+     if (!write_response_stall && valid_write_address && valid_write_data)
+       begin
+          unique0 case (waddr[11:2])
+            reg_data: begin
+               if (wstrb[0]) gpio_o[7:0]   <= wdata[7:0];
+               if (wstrb[1]) gpio_o[15:8]  <= wdata[15:8];
+               if (wstrb[2]) gpio_o[23:16] <= wdata[23:16];
+               if (wstrb[3]) gpio_o[31:24] <= wdata[31:24];
+            end
+            reg_dir: begin
+               if (wstrb[0]) gpio_en[7:0]   <= wdata[7:0];
+               if (wstrb[1]) gpio_en[15:8]  <= wdata[15:8];
+               if (wstrb[2]) gpio_en[23:16] <= wdata[23:16];
+               if (wstrb[3]) gpio_en[31:24] <= wdata[31:24];
+            end
+          endcase
+       end
 
    always_ff @(posedge axi.aclk )
      if (!axi.aresetn)
@@ -111,7 +132,10 @@ module axi4l_dpramx32
        else if (axi.bready)
          axi.bvalid <= 1'b0;
 
-   assign axi.bresp = OKAY;
+   always_ff @(posedge axi.aclk)
+     if (!write_response_stall && valid_write_address) begin
+        axi.bresp <= check(waddr);
+     end
 
    // --------------------------------------------------------------------------
    // Read channels
@@ -142,11 +166,14 @@ module axi4l_dpramx32
      else
        raddr = axi.araddr;
 
-   always @(posedge axi.aclk)
-     if (!read_response_stall && valid_read_address)
-       axi.rdata <= mem[raddr[ram_aw+1:2]];
-
-   assign axi.rresp = OKAY;
+   always_ff @(posedge axi.aclk)
+     if (!read_response_stall && valid_read_address) begin
+        unique0 case (raddr[11:2])
+          reg_data: axi.rdata <= gpio_sync;
+          reg_dir:  axi.rdata <= gpio_en;
+        endcase
+        axi.rresp <= check(raddr);
+     end
 
    always_ff @(posedge axi.aclk)
      if (!axi.aresetn)
@@ -156,4 +183,8 @@ module axi4l_dpramx32
          axi.arready <= !valid_read_address;
        else
          axi.arready <= 1'b1;
+
+   function resp_t check(input [11:0] addr);
+      return (addr[11:2] inside {reg_data, reg_dir}) ? OKAY : SLVERR;
+   endfunction
 endmodule

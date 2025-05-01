@@ -2,7 +2,7 @@
 
 module  axi4l_interconnect
   #(parameter numm = 3,                      // number of masters
-    parameter nums = 3,                      // number of slaves
+    parameter nums = 6,                      // number of slaves
     parameter [31:0] base_addr[nums] = '{0}, // base addresses of slaves
     parameter [31:0] size[nums]      = '{0}) // address size of slaves
    (axi4l_if.slave  axim[numm],              // AXI4-Lite master interfaces
@@ -16,8 +16,19 @@ module  axi4l_interconnect
    localparam pw = $bits(prot_t);
    localparam rw = $bits(resp_t);
 
-   localparam [nums-1:0][aw-1:0] slave_addr = {base_addr[2], base_addr[1], base_addr[0]};
-   localparam [nums-1:0][aw-1:0] slave_mask = {~(size[2]-1), ~(size[1]-1), ~(size[0]-1)};
+   localparam [nums-1:0][aw-1:0] slave_addr = {base_addr[5],
+                                               base_addr[4],
+                                               base_addr[3],
+                                               base_addr[2],
+                                               base_addr[1],
+                                               base_addr[0]};
+
+   localparam [nums-1:0][aw-1:0] slave_mask = {~(size[5] - 1),
+                                               ~(size[4] - 1),
+                                               ~(size[3] - 1),
+                                               ~(size[2] - 1),
+                                               ~(size[1] - 1),
+                                               ~(size[0] - 1)};
 
    logic [numm-1:0]         axim_awvalid;
    logic [numm-1:0]         axim_awready;
