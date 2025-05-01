@@ -3,3 +3,4 @@ ibex_soc.*/
 .Xil/
 vivado*.jou
 vivado*.log
+vivado*.str

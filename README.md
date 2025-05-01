@@ -84,7 +84,8 @@ The clock for the SOC was 50 MHz.
 
 | LUT  | Registers |
 |------|-----------|
-| 5568 | 3251      |
+| 6217 | 4093      |
 
 ## Recources
+- [Building a custom yet functional AXI-lite slave](https://zipcpu.com/blog/2019/01/12/demoaxilite.html)
 - [WB2AXIP: Bus interconnects, bridges, and other components](https://github.com/ZipCPU/wb2axip/)

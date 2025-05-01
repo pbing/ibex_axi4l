@@ -54,13 +54,14 @@ int main(int argc, char **argv) {
     uint8_t button = *btn;
     if (*sw & 0b1000) {
       uint8_t color = *led & 0b0111;
-      *ledrgb = (color << 24) | (color << 16) | (color << 8) | color;
+      *ledrgb = (color << 9) | (color << 6) | (color << 3) | color;
     } else {
       uint8_t color = *sw & 0b0111;
+      *ledrgb = 0;
       if (button & 0b0001) *ledrgb = color;
-      if (button & 0b0010) *ledrgb = color << 8;
-      if (button & 0b0100) *ledrgb = color << 16;
-      if (button & 0b1000) *ledrgb = color << 24;
+      if (button & 0b0010) *ledrgb = color << 3;
+      if (button & 0b0100) *ledrgb = color << 6;
+      if (button & 0b1000) *ledrgb = color << 9;
     }
 
     // green LED
