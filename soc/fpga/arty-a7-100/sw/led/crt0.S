@@ -71,10 +71,11 @@ main_entry:
   // external interrupts are handled by the same callback
   // until compiler supports IRQ routines
   .org 0x00
-  .rept 31
-  nop
+  .rept 30
+  nop                           // INT 0...29
   .endr
-  jal x0, default_exc_handler
+  jal x0, btn_interrupt_handler // INT 30
+  jal x0, default_exc_handler   // INT 31
 
   // reset vector
   .org 0x80

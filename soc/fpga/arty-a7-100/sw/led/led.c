@@ -34,34 +34,41 @@ static int usleep(unsigned long usec) {
   return usleep_ibex(usec);
 }
 
+static volatile uint32_t *sw     = (volatile uint32_t *) 0x10000000;
+static volatile uint32_t *ledrgb = (volatile uint32_t *) 0x10001000;
+static volatile uint32_t *led    = (volatile uint32_t *) 0x10002000;
+static volatile uint32_t *btn    = (volatile uint32_t *) 0x10003000;
+
+__attribute__((interrupt))
+void btn_interrupt_handler(void) {
+  if (!(*sw & 0b1000)) {
+    uint8_t button = *btn;
+    uint8_t color = *sw & 0b0111;
+    *ledrgb = 0;
+    if (button & 0b0001) *ledrgb = color;
+    if (button & 0b0010) *ledrgb = color << 3;
+    if (button & 0b0100) *ledrgb = color << 6;
+    if (button & 0b1000) *ledrgb = color << 9;
+  }
+};
+
 int main(int argc, char **argv) {
-  volatile uint32_t *sw     = (volatile uint32_t *) 0x10000000;
-  volatile uint32_t *ledrgb = (volatile uint32_t *) 0x10001000;
-  volatile uint32_t *led    = (volatile uint32_t *) 0x10002000;
-  volatile uint32_t *btn    = (volatile uint32_t *) 0x10003000;
-
-  *ledrgb = 0;
-  *led = 0;
-
   //asm("csrci 0x7c0, 1"); // disable icache
   asm("csrsi 0x7c0, 1"); // enable icache
 
+  asm("lui t0, 1<<11"); // MEEI
+  asm("csrw mie, t0"); // enable interrupts
+
+  *ledrgb = 0;
+  *led = 0;
   for (;;) {
     usleep(1000 * 1000); // 1000 ms
     //usleep(1 * 1000); // 1 ms
 
     // RGB LED
-    uint8_t button = *btn;
     if (*sw & 0b1000) {
       uint8_t color = *led & 0b0111;
       *ledrgb = (color << 9) | (color << 6) | (color << 3) | color;
-    } else {
-      uint8_t color = *sw & 0b0111;
-      *ledrgb = 0;
-      if (button & 0b0001) *ledrgb = color;
-      if (button & 0b0010) *ledrgb = color << 3;
-      if (button & 0b0100) *ledrgb = color << 6;
-      if (button & 0b1000) *ledrgb = color << 9;
     }
 
     // green LED
