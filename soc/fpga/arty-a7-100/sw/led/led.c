@@ -44,14 +44,12 @@ void btn_interrupt_handler(void) {
   if (!(*sw & 0b1000)) {
     uint8_t button = *btn;
     uint8_t color = *sw & 0b0111;
-    if (button == 0) {
-      *ledrgb = 0;
-    } else {
-      if (button & 0b0001) *ledrgb = color;
-      if (button & 0b0010) *ledrgb = color << 3;
-      if (button & 0b0100) *ledrgb = color << 6;
-      if (button & 0b1000) *ledrgb = color << 9;
-    }
+    uint8_t ledrgb_reg = 0;
+    if (button & 0b0001) ledrgb_reg |= color;
+    if (button & 0b0010) ledrgb_reg |= color << 3;
+    if (button & 0b0100) ledrgb_reg |= color << 6;
+    if (button & 0b1000) ledrgb_reg |= color << 9;
+    *ledrgb = ledrgb_reg;
   }
 };
 
@@ -59,10 +57,8 @@ int main(int argc, char **argv) {
   //asm("csrci 0x7c0, 1"); // disable icache
   asm("csrsi 0x7c0, 1"); // enable icache
 
-  asm("li t0, 1<<30"); // IRQ 30
-  asm("csrw mie, t0"); // enable local interrupt
-
-  asm("csrsi mstatus, 1<<3"); // MIE: enable interrupts
+  asm("csrw mie, %0" : : "r"(1ul << 30)); // enable local interrupt for IRQ30
+  asm("csrsi mstatus, 1 << 3");           // MIE: enable interrupts
 
   *ledrgb = 0;
   *led = 0;
