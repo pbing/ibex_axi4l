@@ -44,7 +44,7 @@ void btn_interrupt_handler(void) {
   if (!(*sw & 0b1000)) {
     uint8_t button = *btn;
     uint8_t color = *sw & 0b0111;
-    uint8_t ledrgb_reg = 0;
+    uint32_t ledrgb_reg = 0;
     if (button & 0b0001) ledrgb_reg |= color;
     if (button & 0b0010) ledrgb_reg |= color << 3;
     if (button & 0b0100) ledrgb_reg |= color << 6;
