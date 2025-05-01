@@ -6,10 +6,9 @@ The instruction and data memory interfaces are converted to AXI4-Lite.
 
 ## Status
 - simulated with Verilator
-- implemented in Vivado
-- programmed on FPGA board
-- use debugger via BSCANE2 (FPGA implementation)
-- use debugger via JTAG (simulation)
+- FPGA proven
+  - debugging via BSCANE2 (FPGA implementation)
+  - debugging via JTAG (simulation)
 
 ## Linting with Verilator
 ```shell
@@ -78,14 +77,14 @@ Remote debugging using localhost:3333
 | geom. mean |        |              | 2.35 |
 
 ## FPGA Implementation
-[Arty A7-100T](https://digilent.com/shop/arty-a7-100t-artix-7-fpga-development-board/)
+Implementation was done with an [Arty A7-100T](https://digilent.com/shop/arty-a7-100t-artix-7-fpga-development-board/).
 
 The clock for the SOC was 50 MHz.
 
+Resource utilization with instruction cache and four hardware breakpoints:
 | LUT  | Registers |
 |------|-----------|
 | 6357 | 4194      |
 
 ## Recources
-- [Building a custom yet functional AXI-lite slave](https://zipcpu.com/blog/2019/01/12/demoaxilite.html)
-- [WB2AXIP: Bus interconnects, bridges, and other components](https://github.com/ZipCPU/wb2axip/)
+- Gisselquist Technology LLC, [Building a custom yet functional AXI-lite slave](https://zipcpu.com/blog/2019/01/12/demoaxilite.html).
