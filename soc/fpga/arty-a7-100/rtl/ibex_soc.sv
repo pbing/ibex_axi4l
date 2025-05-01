@@ -81,8 +81,10 @@ module ibex_soc
       .clk);
 
    axi4l_ibex_top
-     #(.RegFile (RegFileFPGA),
-       .ICache  (ICache))
+     #(.RegFile       (RegFileFPGA),
+       .ICache        (ICache),
+       .DbgTriggerEn  (1'b1),
+       .DbgHwBreakNum (4))
    u_axi_ibex_top
      (.clk,
       .rst_n,
