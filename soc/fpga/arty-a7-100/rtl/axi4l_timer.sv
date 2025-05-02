@@ -103,7 +103,7 @@ module axi4l_timer
           wdata = axi.wdata;
        end
 
-   always_ff @(posedge axi.aclk or posedge axi.aresetn)
+   always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
        mtimecmp <= 64'hffffffffffffffff;
      else
