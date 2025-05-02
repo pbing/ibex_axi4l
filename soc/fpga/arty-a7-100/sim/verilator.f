@@ -91,6 +91,7 @@
 ../../../../soc/fpga/arty-a7-100/rtl/axi4l_dpramx32.sv
 ../../../../soc/fpga/arty-a7-100/rtl/axi4l_gpio.sv
 ../../../../soc/fpga/arty-a7-100/rtl/axi4l_interconnect.sv
+../../../../soc/fpga/arty-a7-100/rtl/axi4l_timer.sv
 ../../../../soc/fpga/arty-a7-100/rtl/crg.sv
 ../../../../soc/fpga/arty-a7-100/rtl/dpramx32.sv
 ../../../../soc/fpga/arty-a7-100/rtl/sync_data.sv

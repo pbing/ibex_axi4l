@@ -36,6 +36,9 @@ module ibex_soc
    localparam [31:0] btn_base_addr    = 'h10003000;
    localparam [31:0] btn_size         = 'h1000;
 
+   localparam [31:0] timer_base_addr  = 'h10004000;
+   localparam [31:0] timer_size       = 'h1000;
+
    localparam [31:0] dm_base_addr     = 'h1A110000;
    localparam [31:0] dm_size          = 'h1000;
 
@@ -57,7 +60,7 @@ module ibex_soc
    logic          dmi_resp_ready;
    dm::dmi_resp_t dmi_resp;
 
-   logic          btn_irq;
+   logic          timer_irq;
 
 `ifndef SYNTHESIS
    logic tdo_o;
@@ -74,7 +77,7 @@ module ibex_soc
 `endif
 
    axi4l_if axim[3] (.aclk (clk), .aresetn (rst_n));
-   axi4l_if axis[6] (.aclk (clk), .aresetn (rst_n));
+   axi4l_if axis[7] (.aclk (clk), .aresetn (rst_n));
 
    crg u_crg
      (.clk100m   (clk100mhz),
@@ -100,9 +103,9 @@ module ibex_soc
       .boot_addr            (32'h00000000),
 
       .irq_software         (1'b0),
-      .irq_timer            (1'b0),
+      .irq_timer            (timer_irq),
       .irq_external         (1'b0),
-      .irq_fast             ({btn_irq, 14'h0000}),
+      .irq_fast             (15'h0000),
       .irq_nm               (1'b0),
 
       .scramble_key_valid   (1'b0),
@@ -135,7 +138,7 @@ module ibex_soc
       .unavailable  ('0),
       .hartinfo,
 
-      .axis         (axis[5]),
+      .axis         (axis[1]),
       .axim         (axim[0]),
 
       .dmi_rst_n,
@@ -170,19 +173,21 @@ module ibex_soc
 
    axi4l_interconnect
      #(.numm      (3),
-       .nums      (6),
+       .nums      (7),
        .base_addr ('{ram_base_addr,
+                     dm_base_addr,
                      sw_base_addr,
                      ledrgb_base_addr,
                      led_base_addr,
                      btn_base_addr,
-                     dm_base_addr}),
+                     timer_base_addr}),
        .size      ('{ram_size,
+                     dm_size,
                      sw_size,
                      ledrgb_size,
                      led_size,
                      btn_size,
-                     dm_size}))
+                     timer_size}))
    u_interconnect
      (.axim, .axis);
 
@@ -193,7 +198,7 @@ module ibex_soc
    // --------------------------------------------------------------------------------
    wire [31:0] sw_gpio_i = {28'h0000000, sw};
 
-   axi4l_gpio u_sw (.axi(axis[1]), .gpio_i(sw_gpio_i), .gpio_o(), .gpio_en());
+   axi4l_gpio u_sw (.axi(axis[2]), .gpio_i(sw_gpio_i), .gpio_o(), .gpio_en());
 
    // --------------------------------------------------------------------------------
    // RGB LED
@@ -208,7 +213,7 @@ module ibex_soc
         ledrgb[i][0] = ledrgb_gpio_o[3 * i + 0]; // B
    end
 
-   axi4l_gpio u_ledrgb (.axi(axis[2]), .gpio_i(ledrgb_gpio_i), .gpio_o(ledrgb_gpio_o), .gpio_en());
+   axi4l_gpio u_ledrgb (.axi(axis[3]), .gpio_i(ledrgb_gpio_i), .gpio_o(ledrgb_gpio_o), .gpio_en());
 
    // --------------------------------------------------------------------------------
    // LED
@@ -218,12 +223,17 @@ module ibex_soc
 
    assign led = led_gpio_o[3:0];
 
-   axi4l_gpio u_ledg (.axi(axis[3]), .gpio_i(led_gpio_i), .gpio_o(led_gpio_o), .gpio_en());
+   axi4l_gpio u_ledg (.axi(axis[4]), .gpio_i(led_gpio_i), .gpio_o(led_gpio_o), .gpio_en());
 
    // --------------------------------------------------------------------------------
    // BTN
    // --------------------------------------------------------------------------------
    wire [31:0] btn_gpio_i = {28'h0000000, btn};
 
-   axi4l_gpio u_btn (.axi(axis[4]), .gpio_i(btn_gpio_i), .gpio_o(), .gpio_en(), .gpio_irq(btn_irq));
+   axi4l_gpio u_btn (.axi(axis[5]), .gpio_i(btn_gpio_i), .gpio_o(), .gpio_en());
+
+   // --------------------------------------------------------------------------------
+   // Timer
+   // --------------------------------------------------------------------------------
+   axi4l_timer u_timer(.clk, .rst_n, .irq(timer_irq), .axi(axis[6]));
 endmodule

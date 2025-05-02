@@ -3,53 +3,48 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <stdint.h>
-#define CLK_FIXED_FREQ_HZ (50ULL * 1000 * 1000)
+//#define CLK_FIXED_FREQ_HZ (50ULL * 1000 * 1000)
+const unsigned long long CLK_FIXED_FREQ_HZ = (50ull * 1000 * 1000);
+const unsigned int TICK_TIME = 10;    // 10 ms
+const unsigned int BLINK_TIME = 1000; // 1000 ms
 
-/**
- * Delay loop executing within 8 cycles on ibex
- */
-static void delay_loop_ibex(unsigned long loops) {
-  int out; /* only to notify compiler of modifications to |loops| */
-  asm volatile(
-      "1: nop             \n" // 1 cycle
-      "   nop             \n" // 1 cycle
-      "   nop             \n" // 1 cycle
-      "   nop             \n" // 1 cycle
-      "   addi %1, %1, -1 \n" // 1 cycle
-      "   bnez %1, 1b     \n" // 3 cycles
-      : "=&r" (out)
-      : "0" (loops)
-  );
-}
+static volatile uint32_t *SW        = (uint32_t*)0x10000000;
+static volatile uint32_t *LEDRGB    = (uint32_t*)0x10001000;
+static volatile uint32_t *LED       = (uint32_t*)0x10002000;
+static volatile uint32_t *BTN       = (uint32_t*)0x10003000;
+static volatile uint32_t *MTIME     = (uint32_t*)0x10004000;
+//static volatile uint32_t *MTIMEH  = (uint32_t*)0x10004004;
+static volatile uint32_t *MTIMECMP  = (uint32_t*)0x10004008;
+static volatile uint32_t *MTIMECMPH = (uint32_t*)0x1000400c;
 
-static int usleep_ibex(unsigned long usec) {
-  unsigned long usec_cycles;
-  usec_cycles = CLK_FIXED_FREQ_HZ * usec / 1000 / 1000 / 8;
+__attribute__((interrupt)) void timer_interrupt_handler(void) {
+  static unsigned int ticks = 0;
 
-  delay_loop_ibex(usec_cycles);
-  return 0;
-}
+  // blink every second
+  if (++ticks == BLINK_TIME / TICK_TIME) {
+    ticks = 0;
+    ++(*LED);
+  }
 
-static int usleep(unsigned long usec) {
-  return usleep_ibex(usec);
-}
-
-static volatile uint32_t *sw     = (volatile uint32_t *) 0x10000000;
-static volatile uint32_t *ledrgb = (volatile uint32_t *) 0x10001000;
-static volatile uint32_t *led    = (volatile uint32_t *) 0x10002000;
-static volatile uint32_t *btn    = (volatile uint32_t *) 0x10003000;
+  // increment mtimecmp
+  uint64_t mtimecmp = *((uint64_t*)MTIMECMP);
+  mtimecmp += CLK_FIXED_FREQ_HZ / 1000 / TICK_TIME;
+  *MTIMECMP = 0xffffffff;
+  *MTIMECMPH = mtimecmp >> 32;
+  *MTIMECMP = mtimecmp & 0xffffffff;
+};
 
 __attribute__((interrupt))
 void btn_interrupt_handler(void) {
-  if (!(*sw & 0b1000)) {
-    uint8_t button = *btn;
-    uint8_t color = *sw & 0b0111;
+  if (!(*SW & 0b1000)) {
+    uint8_t button = *BTN;
+    uint8_t color = *SW & 0b0111;
     uint32_t ledrgb_reg = 0;
     if (button & 0b0001) ledrgb_reg |= color;
     if (button & 0b0010) ledrgb_reg |= color << 3;
     if (button & 0b0100) ledrgb_reg |= color << 6;
     if (button & 0b1000) ledrgb_reg |= color << 9;
-    *ledrgb = ledrgb_reg;
+    *LEDRGB = ledrgb_reg;
   }
 };
 
@@ -57,22 +52,32 @@ int main(int argc, char **argv) {
   //asm("csrci 0x7c0, 1"); // disable icache
   asm("csrsi 0x7c0, 1"); // enable icache
 
-  asm("csrw mie, %0" : : "r"(1ul << 30)); // enable local interrupt for IRQ30
-  asm("csrsi mstatus, 1 << 3");           // MIE: enable interrupts
+  *LEDRGB = 0;
+  *LED = 0;
 
-  *ledrgb = 0;
-  *led = 0;
+  uint64_t mtime = *((uint64_t*)MTIME);
+  uint64_t mtimecmp = mtime + CLK_FIXED_FREQ_HZ / 1000 / TICK_TIME;
+  *MTIMECMP = 0xffffffff;
+  *MTIMECMPH = mtimecmp >> 32;
+  *MTIMECMP = mtimecmp & 0xffffffff;
+
+  asm("csrw mie, %0" : : "r"(1ul << 7)); // MTIE: Machine Timer Interrupt Enable
+  asm("csrsi mstatus, 1 << 3");          // MIE: Machine Interrupt Enable
+
   for (;;) {
-    usleep(1000 * 1000); // 1000 ms
-    //usleep(1 * 1000); // 1 ms
-
-    // RGB LED
-    if (*sw & 0b1000) {
-      uint8_t color = *led & 0b0111;
-      *ledrgb = (color << 9) | (color << 6) | (color << 3) | color;
-    }
-
-    // green LED
-    *led = *led + 1;
+    asm volatile("wfi");
   }
+//  for (;;) {
+//    usleep(1000 * 1000); // 1000 ms
+//    //usleep(1 * 1000); // 1 ms
+//
+//    // RGB LED
+//    if (*SW & 0b1000) {
+//      uint8_t color = *LED & 0b0111;
+//      *LEDRGB = (color << 9) | (color << 6) | (color << 3) | color;
+//    }
+//
+//    // green LED
+//    ++(*LED);
+//  }
 }
