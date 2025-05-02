@@ -37,16 +37,9 @@ module axi4l_timer
        mtime <= 64'h0000000000000000;
      else
        mtime <= mtime + 64'h0000000000000001;
-   
-   always_ff @(posedge clk or negedge rst_n)
-     if (!rst_n)
-       irq <= 1'b0;
-     else
-       if (mtime >= mtimecmp)
-         irq <= 1'b1;
-       else
-         irq <= 1'b0; // FIXME
-   
+
+   assign irq = (mtime >= mtimecmp);
+
    // --------------------------------------------------------------------------
    // Write channels
    // --------------------------------------------------------------------------
