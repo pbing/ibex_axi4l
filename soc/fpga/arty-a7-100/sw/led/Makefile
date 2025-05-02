@@ -5,8 +5,8 @@
 # Generate a baremetal application
 
 PROGRAM ?= led
-PROGRAM_CFLAGS = -Wall -g -Os
-#PROGRAM_CFLAGS = -Wall -g -O0
+#PROGRAM_CFLAGS = -Wall -Os
+PROGRAM_CFLAGS = -Wall -ggdb -Og -DDEBUG
 ARCH = rv32imc_zicsr
 #ARCH = rv32im_zicsr # to disable compressed instructions
 SRCS = $(PROGRAM).c
