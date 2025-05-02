@@ -84,7 +84,7 @@ The clock for the SOC was 50 MHz.
 Resource utilization with instruction cache and four hardware breakpoints:
 | LUT  | Registers |
 |------|-----------|
-| 6357 | 4194      |
+| 6569 | 4492      |
 
 ## Recources
 - Gisselquist Technology LLC, [Building a custom yet functional AXI-lite slave](https://zipcpu.com/blog/2019/01/12/demoaxilite.html).

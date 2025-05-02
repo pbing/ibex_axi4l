@@ -1,10 +1,8 @@
-// Copyright lowRISC contributors.
-// Licensed under the Apache License, Version 2.0, see LICENSE for details.
-// SPDX-License-Identifier: Apache-2.0
+// Blinky
 
 #include <stdint.h>
-//#define CLK_FIXED_FREQ_HZ (50ULL * 1000 * 1000)
-const unsigned long long CLK_FIXED_FREQ_HZ = (50ull * 1000 * 1000);
+
+const unsigned long long CLK_FIXED_FREQ_HZ = 50000000ULL;
 const unsigned int TICK_TIME = 10;    // 10 ms
 const unsigned int BLINK_TIME = 1000; // 1000 ms
 
@@ -13,29 +11,12 @@ static volatile uint32_t *LEDRGB    = (uint32_t*)0x10001000;
 static volatile uint32_t *LED       = (uint32_t*)0x10002000;
 static volatile uint32_t *BTN       = (uint32_t*)0x10003000;
 static volatile uint32_t *MTIME     = (uint32_t*)0x10004000;
-//static volatile uint32_t *MTIMEH  = (uint32_t*)0x10004004;
+static volatile uint32_t *MTIMEH    = (uint32_t*)0x10004004;
 static volatile uint32_t *MTIMECMP  = (uint32_t*)0x10004008;
 static volatile uint32_t *MTIMECMPH = (uint32_t*)0x1000400c;
 
 __attribute__((interrupt)) void timer_interrupt_handler(void) {
-  static unsigned int ticks = 0;
-
-  // blink every second
-  if (++ticks == BLINK_TIME / TICK_TIME) {
-    ticks = 0;
-    ++(*LED);
-  }
-
-  // increment mtimecmp
-  uint64_t mtimecmp = *((uint64_t*)MTIMECMP);
-  mtimecmp += CLK_FIXED_FREQ_HZ / 1000 / TICK_TIME;
-  *MTIMECMP = 0xffffffff;
-  *MTIMECMPH = mtimecmp >> 32;
-  *MTIMECMP = mtimecmp & 0xffffffff;
-};
-
-__attribute__((interrupt))
-void btn_interrupt_handler(void) {
+  // sense buttons and switch RGB LEDs with color encoded in SW[2:0]
   if (!(*SW & 0b1000)) {
     uint8_t button = *BTN;
     uint8_t color = *SW & 0b0111;
@@ -46,6 +27,20 @@ void btn_interrupt_handler(void) {
     if (button & 0b1000) ledrgb_reg |= color << 9;
     *LEDRGB = ledrgb_reg;
   }
+
+  // blink every second green LEDs
+  static unsigned int ticks = 0;
+  if (++ticks == BLINK_TIME / TICK_TIME) {
+    ticks = 0;
+    ++(*LED);
+  }
+
+  // increment mtimecmp
+  uint64_t mtimecmp = *((uint64_t*)MTIMECMP);
+  mtimecmp += CLK_FIXED_FREQ_HZ * TICK_TIME / 1000;
+  *MTIMECMP = 0xffffffff;
+  *MTIMECMPH = mtimecmp >> 32;
+  *MTIMECMP = mtimecmp & 0xffffffff;
 };
 
 int main(int argc, char **argv) {
@@ -55,8 +50,15 @@ int main(int argc, char **argv) {
   *LEDRGB = 0;
   *LED = 0;
 
-  uint64_t mtime = *((uint64_t*)MTIME);
-  uint64_t mtimecmp = mtime + CLK_FIXED_FREQ_HZ / 1000 / TICK_TIME;
+  // initialize mtimecmp
+  uint32_t mtimeh, mtimel;
+  do {
+    mtimeh = *MTIMEH;
+    mtimel = *MTIME;
+  } while (*MTIMEH != mtimeh);
+  uint64_t mtime = mtimeh * 0x100000000UL + mtimel;
+
+  uint64_t mtimecmp = mtime + (CLK_FIXED_FREQ_HZ * TICK_TIME / 1000);
   *MTIMECMP = 0xffffffff;
   *MTIMECMPH = mtimecmp >> 32;
   *MTIMECMP = mtimecmp & 0xffffffff;
@@ -67,17 +69,4 @@ int main(int argc, char **argv) {
   for (;;) {
     asm volatile("wfi");
   }
-//  for (;;) {
-//    usleep(1000 * 1000); // 1000 ms
-//    //usleep(1 * 1000); // 1 ms
-//
-//    // RGB LED
-//    if (*SW & 0b1000) {
-//      uint8_t color = *LED & 0b0111;
-//      *LEDRGB = (color << 9) | (color << 6) | (color << 3) | color;
-//    }
-//
-//    // green LED
-//    ++(*LED);
-//  }
 }
