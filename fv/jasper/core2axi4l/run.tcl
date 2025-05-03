@@ -1,10 +1,10 @@
 clear -all
 
 # read design
-analyze -sv ../../rtl/axi4l_pkg.sv
-analyze -sv ../../rtl/axi4l_if.sv
-analyze -sv ../../rtl/core_if.sv
-analyze -sv ../../rtl/core2axi4l.sv +define+FORMAL
+analyze -sv ../../../rtl/axi4l_pkg.sv
+analyze -sv ../../../rtl/axi4l_if.sv
+analyze -sv ../../../rtl/core_if.sv
+analyze -sv ../../../rtl/core2axi4l.sv +define+FORMAL
 
 # read constraints
 analyze -sv12 fv_core2axi4l.sv
