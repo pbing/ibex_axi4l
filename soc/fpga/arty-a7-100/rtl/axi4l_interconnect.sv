@@ -1,14 +1,13 @@
 /* Wrapper around ZipCPU/axilxbar */
 
 module  axi4l_interconnect
-  #(parameter numm = 3,                      // number of masters
-    parameter nums = 7,                      // number of slaves
-    parameter [31:0] base_addr[nums] = '{0}, // base addresses of slaves
-    parameter [31:0] size[nums]      = '{0}) // address size of slaves
-   (axi4l_if.slave  axim[numm],              // AXI4-Lite master interfaces
-    axi4l_if.master axis[nums]);             // AXI4-Lite slave interfaces
-
    import axi4l_pkg::*;
+  #(parameter numm = 3,               // number of masters
+    parameter nums = 7,               // number of slaves
+    parameter addr_t base_addr[nums], // base addresses of slaves
+    parameter addr_t size[nums])      // address size of slaves
+   (axi4l_if.slave  axim[numm],       // AXI4-Lite master interfaces
+    axi4l_if.master axis[nums]);      // AXI4-Lite slave interfaces
 
    localparam aw = $bits(addr_t);
    localparam dw = $bits(data_t);
@@ -16,6 +15,7 @@ module  axi4l_interconnect
    localparam pw = $bits(prot_t);
    localparam rw = $bits(resp_t);
 
+   // Verilator lint_off WIDTHCONCAT
    localparam [nums-1:0][aw-1:0] slave_addr = {base_addr[6],
                                                base_addr[5],
                                                base_addr[4],
@@ -23,6 +23,7 @@ module  axi4l_interconnect
                                                base_addr[2],
                                                base_addr[1],
                                                base_addr[0]};
+   // Verilator lint_on WIDTHCONCAT
 
    localparam [nums-1:0][aw-1:0] slave_mask = {~(size[6] - 1),
                                                ~(size[5] - 1),
