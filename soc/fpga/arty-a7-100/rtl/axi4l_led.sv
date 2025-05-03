@@ -154,7 +154,7 @@ module axi4l_led
        else
          axi.arready <= 1'b1;
 
-   function resp_t check(input [11:0] addr);
+   function resp_t check(input addr_t addr);
       return (addr[11:2] == 10'h000) ? OKAY : SLVERR;
    endfunction
 endmodule

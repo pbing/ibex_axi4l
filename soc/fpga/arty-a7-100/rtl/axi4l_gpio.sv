@@ -19,8 +19,9 @@ module axi4l_gpio
 
    import axi4l_pkg::*;
 
-   localparam [11:2] reg_data = 10'h000,
-                     reg_dir  = 10'b001;
+   enum logic [11:2] {GPIO_DATA = 10'h000,
+                      GPIO_DIR  = 10'b001
+                      } gpio_addr_e;
 
    logic [31:0] gpio_sync;
 
@@ -113,20 +114,22 @@ module axi4l_gpio
    always_ff @(posedge axi.aclk )
      if (!write_response_stall && valid_write_address && valid_write_data)
        begin
+          // Verilator lint_off CASEINCOMPLETE
           unique0 case (waddr[11:2])
-            reg_data: begin
+            GPIO_DATA: begin
                if (wstrb[0]) gpio_o[7:0]   <= wdata[7:0];
                if (wstrb[1]) gpio_o[15:8]  <= wdata[15:8];
                if (wstrb[2]) gpio_o[23:16] <= wdata[23:16];
                if (wstrb[3]) gpio_o[31:24] <= wdata[31:24];
             end
-            reg_dir: begin
+            GPIO_DIR: begin
                if (wstrb[0]) gpio_en[7:0]   <= wdata[7:0];
                if (wstrb[1]) gpio_en[15:8]  <= wdata[15:8];
                if (wstrb[2]) gpio_en[23:16] <= wdata[23:16];
                if (wstrb[3]) gpio_en[31:24] <= wdata[31:24];
             end
           endcase
+          // Verilator lint_on CASEINCOMPLETE
        end
 
    always_ff @(posedge axi.aclk )
@@ -172,12 +175,15 @@ module axi4l_gpio
      else
        raddr = axi.araddr;
 
+
    always_ff @(posedge axi.aclk)
      if (!read_response_stall && valid_read_address) begin
+        // Verilator lint_off CASEINCOMPLETE
         unique0 case (raddr[11:2])
-          reg_data: axi.rdata <= gpio_sync;
-          reg_dir:  axi.rdata <= gpio_en;
+          GPIO_DATA: axi.rdata <= gpio_sync;
+          GPIO_DIR:  axi.rdata <= gpio_en;
         endcase
+        // Verilator lint_on CASEINCOMPLETE
         axi.rresp <= check(raddr);
      end
 
@@ -190,7 +196,7 @@ module axi4l_gpio
        else
          axi.arready <= 1'b1;
 
-   function resp_t check(input [11:0] addr);
-      return (addr[11:2] inside {reg_data, reg_dir}) ? OKAY : SLVERR;
+   function resp_t check(input addr_t addr);
+      return (addr[11:2] inside {GPIO_DATA, GPIO_DIR}) ? OKAY : SLVERR;
    endfunction
 endmodule

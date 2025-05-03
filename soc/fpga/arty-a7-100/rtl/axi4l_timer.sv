@@ -13,10 +13,11 @@ module axi4l_timer
    );
    import axi4l_pkg::*;
 
-   localparam [11:2] MTIME     = 10'h000,
-                     MTIMEH    = 10'h001,
-                     MTIMECMP  = 10'h002,
-                     MTIMECMPH = 10'h003;
+   enum [11:2] {MTIME     = 10'h000,
+                MTIMEH    = 10'h001,
+                MTIMECMP  = 10'h002,
+                MTIMECMPH = 10'h003
+                } timer_addr_e;
 
    logic [63:0] mtime;
    logic [63:0] mtimecmp;
@@ -102,6 +103,7 @@ module axi4l_timer
      else
        if (!write_response_stall && valid_write_address && valid_write_data)
          begin
+            // Verilator lint_off CASEINCOMPLETE
             unique0 case (waddr[11:2])
               MTIMECMP: begin
                  if (wstrb[0]) mtimecmp[7:0]   <= wdata[7:0];
@@ -116,6 +118,7 @@ module axi4l_timer
                  if (wstrb[3]) mtimecmp[63:56] <= wdata[31:24];
               end
             endcase
+            // Verilator lint_on CASEINCOMPLETE
          end
 
    always_ff @(posedge axi.aclk)
@@ -163,12 +166,14 @@ module axi4l_timer
 
    always_ff @(posedge axi.aclk)
      if (!read_response_stall && valid_read_address) begin
+        // Verilator lint_off CASEINCOMPLETE
         unique0 case (raddr[11:2])
           MTIME:     axi.rdata <= mtime[31:0];
           MTIMEH:    axi.rdata <= mtime[63:32];
           MTIMECMP:  axi.rdata <= mtimecmp[31:0];
           MTIMECMPH: axi.rdata <= mtimecmp[63:32];
         endcase
+        // Verilator lint_on CASEINCOMPLETE
         axi.rresp <= check(raddr);
      end
 
@@ -181,7 +186,7 @@ module axi4l_timer
        else
          axi.arready <= 1'b1;
 
-   function resp_t check(input [11:0] addr);
+   function resp_t check(input addr_t addr);
       return (addr[11:2] inside {MTIME, MTIMEH, MTIMECMP, MTIMECMPH}) ? OKAY : SLVERR;
    endfunction
 endmodule
