@@ -20,27 +20,28 @@ module ibex_soc
     );
 
    import ibex_pkg::*;
+   import axi4l_pkg::addr_t;
 
-   localparam [31:0] ram_base_addr    = 'h00000000;
-   localparam [31:0] ram_size         = 'h10000;
+   localparam addr_t ram_base_addr    = 'h00000000;
+   localparam addr_t ram_size         = 'h10000;
 
-   localparam [31:0] sw_base_addr     = 'h10000000;
-   localparam [31:0] sw_size          = 'h1000;
+   localparam addr_t sw_base_addr     = 'h10000000;
+   localparam addr_t sw_size          = 'h1000;
 
-   localparam [31:0] ledrgb_base_addr = 'h10001000;
-   localparam [31:0] ledrgb_size      = 'h1000;
+   localparam addr_t ledrgb_base_addr = 'h10001000;
+   localparam addr_t ledrgb_size      = 'h1000;
 
-   localparam [31:0] led_base_addr    = 'h10002000;
-   localparam [31:0] led_size         = 'h1000;
+   localparam addr_t led_base_addr    = 'h10002000;
+   localparam addr_t led_size         = 'h1000;
 
-   localparam [31:0] btn_base_addr    = 'h10003000;
-   localparam [31:0] btn_size         = 'h1000;
+   localparam addr_t btn_base_addr    = 'h10003000;
+   localparam addr_t btn_size         = 'h1000;
 
-   localparam [31:0] timer_base_addr  = 'h10004000;
-   localparam [31:0] timer_size       = 'h1000;
+   localparam addr_t timer_base_addr  = 'h10004000;
+   localparam addr_t timer_size       = 'h1000;
 
-   localparam [31:0] dm_base_addr     = 'h1A110000;
-   localparam [31:0] dm_size          = 'h1000;
+   localparam addr_t dm_base_addr     = 'h1A110000;
+   localparam addr_t dm_size          = 'h1000;
 
    logic          clk;
    logic          rst_n;
@@ -198,7 +199,7 @@ module ibex_soc
    // --------------------------------------------------------------------------------
    wire [31:0] sw_gpio_i = {28'h0000000, sw};
 
-   axi4l_gpio u_sw (.axi(axis[2]), .gpio_i(sw_gpio_i), .gpio_o(), .gpio_en());
+   axi4l_gpio u_sw (.axi(axis[2]), .gpio_i(sw_gpio_i), .gpio_o(), .gpio_en(), .gpio_irq());
 
    // --------------------------------------------------------------------------------
    // RGB LED
@@ -213,7 +214,7 @@ module ibex_soc
         ledrgb[i][0] = ledrgb_gpio_o[3 * i + 0]; // B
    end
 
-   axi4l_gpio u_ledrgb (.axi(axis[3]), .gpio_i(ledrgb_gpio_i), .gpio_o(ledrgb_gpio_o), .gpio_en());
+   axi4l_gpio u_ledrgb (.axi(axis[3]), .gpio_i(ledrgb_gpio_i), .gpio_o(ledrgb_gpio_o), .gpio_en(), .gpio_irq());
 
    // --------------------------------------------------------------------------------
    // LED
@@ -223,14 +224,14 @@ module ibex_soc
 
    assign led = led_gpio_o[3:0];
 
-   axi4l_gpio u_ledg (.axi(axis[4]), .gpio_i(led_gpio_i), .gpio_o(led_gpio_o), .gpio_en());
+   axi4l_gpio u_ledg (.axi(axis[4]), .gpio_i(led_gpio_i), .gpio_o(led_gpio_o), .gpio_en(), .gpio_irq());
 
    // --------------------------------------------------------------------------------
    // BTN
    // --------------------------------------------------------------------------------
    wire [31:0] btn_gpio_i = {28'h0000000, btn};
 
-   axi4l_gpio u_btn (.axi(axis[5]), .gpio_i(btn_gpio_i), .gpio_o(), .gpio_en());
+   axi4l_gpio u_btn (.axi(axis[5]), .gpio_i(btn_gpio_i), .gpio_o(), .gpio_en(), .gpio_irq());
 
    // --------------------------------------------------------------------------------
    // Timer
