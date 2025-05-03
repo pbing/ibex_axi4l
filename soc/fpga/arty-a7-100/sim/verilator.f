@@ -1,5 +1,4 @@
 +define+ASSERTS_OFF
-+define+NO_MODPORT_EXPRESSIONS
 
 +incdir+../../../../common_cells/include
 ../../../../common_cells/src/cdc_2phase_clearable.sv
