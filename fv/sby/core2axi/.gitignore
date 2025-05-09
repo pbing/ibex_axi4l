@@ -1,0 +1,6 @@
+tb/
+tb_bmc/
+tb_prove/
+tb_cover/
+tb.v
+*.gtkw
