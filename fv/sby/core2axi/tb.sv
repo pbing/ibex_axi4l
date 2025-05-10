@@ -138,7 +138,7 @@ module tb;
 
    always @(*) begin
       // Only send an rvalid if there is an outstanding request
-      if (!core.req && (f_core_outstanding == 0))
+      if (f_core_outstanding == 0)
         AST_no_rvalid: assert (!core.rvalid);
 
       // Grants can only be sent when they are requested
@@ -245,16 +245,16 @@ module tb;
 
    always @(*) begin
       if (rst_n && (u_core2axi4l.state == 1)) // READ_WAIT
-        assume (core.req && !core.we);
+         assert (f_core_outstanding > 0);
 
       if (rst_n && (u_core2axi4l.state == 2)) // WRITE_DATA
-        assume (core.req && core.we);
+        assert (core.req && core.we);
 
       if (rst_n && (u_core2axi4l.state == 3)) // WRITE_ADDR
-        assume (core.req && core.we);
+        assert (core.req && core.we);
 
       if (rst_n && (u_core2axi4l.state == 4)) // WRITE_WAIT
-        assume (core.req && core.we);
+         assert (f_core_outstanding > 0);
    end
 
    //--------------------------------------------------------------------------------
@@ -263,6 +263,6 @@ module tb;
    always @(*) begin
       COV_axi_write_5: cover (cvr_writes == 5);
       COV_axi_read_5:  cover (cvr_reads == 5);
-      //COV_axi_rd_wr: cover ((cvr_reads > 0) && (cvr_writes > 0)); // FIXME
+      COV_axi_rd_wr_8: cover (cvr_reads + cvr_writes == 8);
    end
 endmodule
