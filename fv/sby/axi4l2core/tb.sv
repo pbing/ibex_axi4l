@@ -74,7 +74,7 @@ module tb;
 
    // Count outstanding read requests
    initial f_axi_rd_outstanding = 0;
-   always @(posedge axi.clk)
+   always @(posedge axi.aclk)
      if (!axi.aresetn)
        f_axi_rd_outstanding <= 0;
      else
