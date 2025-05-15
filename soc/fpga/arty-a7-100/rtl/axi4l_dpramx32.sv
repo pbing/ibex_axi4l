@@ -36,8 +36,10 @@ module axi4l_dpramx32
 
    (* ram_style = "block" *) data_t mem[size>>2];
 
+`ifndef FORMAL
    initial
      $readmemh("dpramx32.vmem", mem);
+`endif
 
    // --------------------------------------------------------------------------
    // Write channels
@@ -48,25 +50,27 @@ module axi4l_dpramx32
      valid_write_data     = axi.wvalid  || !axi.wready,
      write_response_stall = axi.bvalid  && !axi.bready;
 
-   always_ff @(posedge axi.aclk)
+   always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
        axi.awready <= 1'b1;
-     else if (write_response_stall)
-       axi.awready <= !valid_write_address;
-     else if (valid_write_data)
-       axi.awready <= 1'b1;
      else
-       axi.awready <= axi.awready && !axi.awvalid;
+       if (write_response_stall)
+         axi.awready <= !valid_write_address;
+       else if (valid_write_data)
+         axi.awready <= 1'b1;
+       else
+         axi.awready <= axi.awready && !axi.awvalid;
 
-   always_ff @(posedge axi.aclk)
+   always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
        axi.wready <= 1'b1;
-     else if (write_response_stall)
-       axi.wready <= !valid_write_data;
-     else if (valid_write_address)
-       axi.wready <= 1'b1;
      else
-       axi.wready <= axi.wready && !axi.wvalid;
+       if (write_response_stall)
+         axi.wready <= !valid_write_data;
+       else if (valid_write_address)
+         axi.wready <= 1'b1;
+       else
+         axi.wready <= axi.wready && !axi.wvalid;
 
    always_ff @(posedge axi.aclk)
      if (axi.awready)
@@ -94,7 +98,7 @@ module axi4l_dpramx32
         wdata = axi.wdata;
      end
 
-   always @(posedge axi.aclk)
+   always_ff @(posedge axi.aclk)
      if (!write_response_stall && valid_write_address && valid_write_data) begin
         if (wstrb[0]) mem[waddr[ram_aw+1:2]][7:0]   <= wdata[7:0];
         if (wstrb[1]) mem[waddr[ram_aw+1:2]][15:8]  <= wdata[15:8];
@@ -102,7 +106,7 @@ module axi4l_dpramx32
         if (wstrb[3]) mem[waddr[ram_aw+1:2]][31:24] <= wdata[31:24];
      end
 
-   always_ff @(posedge axi.aclk )
+   always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
        axi.bvalid <= 1'b0;
      else
@@ -125,11 +129,9 @@ module axi4l_dpramx32
      if (!axi.aresetn)
        axi.rvalid <= 1'b0;
      else
-       if (read_response_stall)
+       if (valid_read_address)
          axi.rvalid <= 1'b1;
-       else if (valid_read_address)
-         axi.rvalid <= 1'b1;
-       else
+       else if (axi.rready)
          axi.rvalid <= 1'b0;
 
    always_ff @(posedge axi.aclk)
@@ -142,18 +144,18 @@ module axi4l_dpramx32
      else
        raddr = axi.araddr;
 
-   always @(posedge axi.aclk)
+   always_ff @(posedge axi.aclk)
      if (!read_response_stall && valid_read_address)
        axi.rdata <= mem[raddr[ram_aw+1:2]];
 
    assign axi.rresp = OKAY;
 
-   always_ff @(posedge axi.aclk)
+   always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
        axi.arready <= 1'b1;
      else
-       if (read_response_stall)
-         axi.arready <= !valid_read_address;
-       else
+       if (!read_response_stall)
          axi.arready <= 1'b1;
+       else if (axi.arvalid)
+         axi.arready <= 1'b0;
 endmodule
