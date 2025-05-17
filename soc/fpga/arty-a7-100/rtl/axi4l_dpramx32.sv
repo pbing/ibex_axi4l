@@ -22,12 +22,14 @@ module axi4l_dpramx32
    logic  valid_write_address;
    logic  valid_write_data;
    logic  write_response_stall;
+   logic  write_enable;
    addr_t pre_waddr, waddr;
    addr_t pre_wdata, wdata;
    strb_t pre_wstrb, wstrb;
 
    logic  valid_read_address;
    logic  read_response_stall;
+   logic  read_enable;
    addr_t pre_raddr, raddr;
 
    // --------------------------------------------------------------------------
@@ -48,7 +50,8 @@ module axi4l_dpramx32
    assign
      valid_write_address  = axi.awvalid || !axi.awready,
      valid_write_data     = axi.wvalid  || !axi.wready,
-     write_response_stall = axi.bvalid  && !axi.bready;
+     write_response_stall = axi.bvalid  && !axi.bready,
+     write_enable         = !write_response_stall && valid_write_address && valid_write_data;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
@@ -98,8 +101,9 @@ module axi4l_dpramx32
         wdata = axi.wdata;
      end
 
+
    always_ff @(posedge axi.aclk)
-     if (!write_response_stall && valid_write_address && valid_write_data) begin
+     if (write_enable) begin
         if (wstrb[0]) mem[waddr[ram_aw+1:2]][7:0]   <= wdata[7:0];
         if (wstrb[1]) mem[waddr[ram_aw+1:2]][15:8]  <= wdata[15:8];
         if (wstrb[2]) mem[waddr[ram_aw+1:2]][23:16] <= wdata[23:16];
@@ -123,7 +127,8 @@ module axi4l_dpramx32
 
    assign
      valid_read_address  = axi.arvalid || !axi.arready,
-     read_response_stall = axi.rvalid && !axi.rready;
+     read_response_stall = axi.rvalid && !axi.rready,
+     read_enable         = !read_response_stall && valid_read_address;
 
    always_ff @(posedge axi.aclk or negedge axi.aresetn)
      if (!axi.aresetn)
@@ -145,7 +150,7 @@ module axi4l_dpramx32
        raddr = axi.araddr;
 
    always_ff @(posedge axi.aclk)
-     if (!read_response_stall && valid_read_address)
+     if (read_enable)
        axi.rdata <= mem[raddr[ram_aw+1:2]];
 
    assign axi.rresp = OKAY;

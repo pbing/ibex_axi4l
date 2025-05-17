@@ -115,8 +115,7 @@ module tb;
      assert (dut.mem[f_addr] == f_data);
 
    always @(posedge aclk)
-     if ((dut.waddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) &&
-         !dut.write_response_stall && dut.valid_write_address && dut.valid_write_data) begin
+     if ((dut.waddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) && dut.write_enable) begin
         if (dut.wstrb[0]) f_data[7:0]   <= dut.wdata[7:0];
         if (dut.wstrb[1]) f_data[15:8]  <= dut.wdata[15:8];
         if (dut.wstrb[2]) f_data[23:16] <= dut.wdata[23:16];
@@ -124,9 +123,7 @@ module tb;
      end
 
    always @(posedge aclk)
-     if (f_past_valid &&
-         $past(dut.raddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) &&
-         $past(!dut.read_response_stall && dut.valid_read_address))
+     if (f_past_valid && $past(dut.raddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) && $past(dut.read_enable))
        assert (axi.rdata == f_data1);
 
    // --------------------------------------------------------------------------
