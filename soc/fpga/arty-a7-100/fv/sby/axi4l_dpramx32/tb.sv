@@ -17,13 +17,13 @@ module tb;
    initial aresetn <= 1'b0;
    always @(posedge aclk) aresetn <= 1'b1;
 
-   logic past_valid;
-   initial past_valid <= 1'b0;
+   logic f_past_valid;
+   initial f_past_valid <= 1'b0;
    always @(posedge aclk)
-     past_valid <= 1'b1;
+     f_past_valid <= 1'b1;
 
    always @(*)
-     if (!past_valid)
+     if (!f_past_valid)
        assume(!aresetn);
 
    logic axi_awr_req, axi_wr_req, axi_wr_ack, axi_ard_req, axi_rd_ack;
@@ -103,7 +103,10 @@ module tb;
    localparam ram_aw = $clog2(RAM_SIZE) - 2;
 
    (* anyconst *) addr_t f_addr;
-   data_t f_data;
+   data_t                f_data, f_data1;
+
+   always @(posedge aclk)
+     f_data1 <= f_data;
 
    initial
      assume (dut.mem[f_addr] == f_data);
@@ -120,13 +123,11 @@ module tb;
         if (dut.wstrb[3]) f_data[31:24] <= dut.wdata[31:24];
      end
 
-/* -----\/----- EXCLUDED -----\/-----
    always @(posedge aclk)
-     if (past_valid &&
+     if (f_past_valid &&
          $past(dut.raddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) &&
          $past(!dut.read_response_stall && dut.valid_read_address))
-       assert (axi.rdata == f_data);
- -----/\----- EXCLUDED -----/\----- */
+       assert (axi.rdata == f_data1);
 
    // --------------------------------------------------------------------------
    // AXI4-Lite
@@ -140,7 +141,7 @@ module tb;
    end
 
    always @(posedge aclk)
-     if (past_valid && $past(!aresetn)) begin
+     if (f_past_valid && $past(!aresetn)) begin
         ASM_axi_awvalid_reset: assume (!axi.awvalid);
         ASM_axi_wvalid_reset:  assume (!axi.wvalid);
         AST_axi_bvalid_reset:  assert (!axi.bvalid);
@@ -149,36 +150,36 @@ module tb;
      end
 
    always @(posedge aclk)
-     if (past_valid && $past(aresetn) && aresetn) begin
+     if (f_past_valid && $past(aresetn) && aresetn) begin
         // Write address channel
-        if (past_valid && $past(axi.awvalid && !axi.awready)) begin
+        if (f_past_valid && $past(axi.awvalid && !axi.awready)) begin
            ASM_axi_awvalid_stable: assume (axi.awvalid);
            ASM_axi_awaddr_stable:  assume ($stable(axi.awaddr));
            ASM_axi_awprot_stable:  assume ($stable(axi.awprot));
         end
 
         // Write data channel
-        if (past_valid && $past(axi.wvalid && !axi.wready)) begin
+        if (f_past_valid && $past(axi.wvalid && !axi.wready)) begin
            ASM_axi_wvalid_stable: assume (axi.wvalid);
            ASM_axi_wdata_stable:  assume ($stable(axi.wdata));
            ASM_axi_wstrb_stable:  assume ($stable(axi.wstrb));
         end
 
         // Write response channel
-        if (past_valid && $past(axi.bvalid && !axi.bready)) begin
+        if (f_past_valid && $past(axi.bvalid && !axi.bready)) begin
            AST_axi_bvalid_stable: assert (axi.bvalid);
            AST_axi_bresp_stable:  assert ($stable(axi.bresp));
         end
 
         // Read address channel
-        if (past_valid && $past(axi.arvalid && !axi.arready)) begin
+        if (f_past_valid && $past(axi.arvalid && !axi.arready)) begin
            ASM_axi_arvalid_stable: assume (axi.arvalid);
            ASM_axi_araddr_stable:  assume ($stable(axi.araddr));
            ASM_axi_arprot_stable:  assume ($stable(axi.arprot));
         end
 
         // Read response channel
-        if (past_valid && $past(axi.rvalid && !axi.rready)) begin
+        if (f_past_valid && $past(axi.rvalid && !axi.rready)) begin
            AST_axi_rvalid_stable: assert (axi.rvalid);
            AST_axi_rresp_stable:  assert ($stable(axi.rresp));
         end
@@ -209,7 +210,7 @@ module tb;
    // --------------------------------------------------------------------------
    // Induction
    // --------------------------------------------------------------------------
- `ifdef SMTBMC_PROVE_ENGINE
+`ifdef SMTBMC_PROVE_ENGINE
    always @(*)
      if (axi.bvalid) begin
         assert (f_axi_awr_outstanding == 1 + (axi.awready ? 0 : 1));
@@ -226,7 +227,7 @@ module tb;
      else begin
         assert (f_axi_rd_outstanding == (axi.arready ? 0 : 1));
      end
- `endif
+`endif
 
    //--------------------------------------------------------------------------------
    // COVER section
