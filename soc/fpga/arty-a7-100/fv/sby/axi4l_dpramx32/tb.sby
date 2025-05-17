@@ -9,7 +9,8 @@ prove: mode prove
 cover: mode cover
 
 [engines]
-smtbmc
+~prove: smtbmc
+prove: abc pdr
 
 [script]
 read -formal tb.v

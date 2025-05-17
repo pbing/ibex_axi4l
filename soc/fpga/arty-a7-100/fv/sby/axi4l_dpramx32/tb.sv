@@ -1,13 +1,15 @@
 module tb;
    import axi4l_pkg::*;
 
+   localparam RAM_SIZE = 'h10;
+
    logic aclk;
    logic aresetn;
 
    int unsigned f_axi_awr_outstanding, f_axi_wr_outstanding, f_axi_rd_outstanding;
 
    axi4l_if axi (.aclk, .aresetn);
-   axi4l_dpramx32 #(.size('h80)) dut (.axi);
+   axi4l_dpramx32 #(.size(RAM_SIZE)) dut (.axi);
 
    //--------------------------------------------------------------------------------
    // Helper code
@@ -98,35 +100,33 @@ module tb;
    // Memory
    // https://zipcpu.com/zipcpu/2018/07/13/memories.html
    // --------------------------------------------------------------------------
-   /* -----\/----- EXCLUDED -----\/-----
-    localparam ram_aw = $clog2('h80) - 2;
+   localparam ram_aw = $clog2(RAM_SIZE) - 2;
 
-    (* anyconst *) addr_t f_addr;
+   (* anyconst *) addr_t f_addr;
+   data_t f_data;
 
-    data_t f_data;
-    initial
-    assume (dut.mem[f_addr] == f_data);
+   initial
+     assume (dut.mem[f_addr] == f_data);
 
-    always @(*)
-    assert (dut.mem[f_addr] == f_data);
+   always @(*)
+     assert (dut.mem[f_addr] == f_data);
 
-    always @(posedge aclk)
-    if (past_valid &&
-    $past(dut.raddr[ram_aw+1:2] == f_addr[ram_aw+1:2]) &&
-    $past(!dut.read_response_stall) &&
-    $past(dut.valid_read_address))
-    assert (axi.rdata == f_data);
+   always @(posedge aclk)
+     if ((dut.waddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) &&
+         !dut.write_response_stall && dut.valid_write_address && dut.valid_write_data) begin
+        if (dut.wstrb[0]) f_data[7:0]   <= dut.wdata[7:0];
+        if (dut.wstrb[1]) f_data[15:8]  <= dut.wdata[15:8];
+        if (dut.wstrb[2]) f_data[23:16] <= dut.wdata[23:16];
+        if (dut.wstrb[3]) f_data[31:24] <= dut.wdata[31:24];
+     end
 
-    always @(posedge aclk)
-    if ((dut.waddr[ram_aw+1:2] == f_addr[ram_aw+1:2]) &&
-    (dut.wstrb == 4'b1111) &&
-    !dut.write_response_stall &&
-    dut.valid_write_address &&
-    dut.valid_write_data)
-    f_data <= dut.wdata;
-
-    always @(*) assume (axi.wstrb == 4'b1111); // FIXME
-    -----/\----- EXCLUDED -----/\----- */
+/* -----\/----- EXCLUDED -----\/-----
+   always @(posedge aclk)
+     if (past_valid &&
+         $past(dut.raddr[ram_aw+1:2] == f_addr[ram_aw-1:0]) &&
+         $past(!dut.read_response_stall && dut.valid_read_address))
+       assert (axi.rdata == f_data);
+ -----/\----- EXCLUDED -----/\----- */
 
    // --------------------------------------------------------------------------
    // AXI4-Lite
@@ -209,6 +209,7 @@ module tb;
    // --------------------------------------------------------------------------
    // Induction
    // --------------------------------------------------------------------------
+ `ifdef SMTBMC_PROVE_ENGINE
    always @(*)
      if (axi.bvalid) begin
         assert (f_axi_awr_outstanding == 1 + (axi.awready ? 0 : 1));
@@ -225,6 +226,7 @@ module tb;
      else begin
         assert (f_axi_rd_outstanding == (axi.arready ? 0 : 1));
      end
+ `endif
 
    //--------------------------------------------------------------------------------
    // COVER section
