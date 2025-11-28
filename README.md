@@ -19,7 +19,7 @@ cd soc/fpga/arty-a7-100/lint
 ## Simulation with Verilator
 ```shell
 cd soc/fpga/arty-a7-100/sim/default
-./use.sh ../sw/nettle-aes/nettle-aes.vmem
+./use.sh ../../sw/nettle-aes/nettle-aes.vmem
 ./build.sh
 ./sim.sh
 less trace_core_00000000.log
