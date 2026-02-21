@@ -103,6 +103,9 @@ module axi4l_ibex_top
     output logic [31:0]                  rvfi_ext_mhpmcountersh [10],
     output logic                         rvfi_ext_ic_scr_key_valid,
     output logic                         rvfi_ext_irq_valid,
+    output logic                         rvfi_ext_expanded_insn_valid,
+    output logic [15:0]                  rvfi_ext_expanded_insn,
+    output logic                         rvfi_ext_expanded_insn_last,
 `endif
 
     /* CPU Control Signals */
