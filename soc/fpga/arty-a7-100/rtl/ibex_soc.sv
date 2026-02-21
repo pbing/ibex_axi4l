@@ -94,37 +94,49 @@ module ibex_soc
    u_axi_ibex_top
      (.clk,
       .rst_n,
-      .instr_axi            (axim[2]),
-      .data_axi             (axim[1]),
+      .instr_axi                (axim[2]),
+      .data_axi                 (axim[1]),
 
-      .test_en              (1'b0),
-      .ram_cfg              ('0),
+      .test_en                  (1'b0),
+      .ram_cfg                  (prim_ram_1p_pkg::RAM_1P_CFG_DEFAULT),
 
-      .hart_id              (32'h00000000),
-      .boot_addr            (32'h00000000),
+      .hart_id                  (32'h00000000),
+      .boot_addr                (32'h00000000),
 
-      .irq_software         (1'b0),
-      .irq_timer            (timer_irq),
-      .irq_external         (1'b0),
-      .irq_fast             (15'h0000),
-      .irq_nm               (1'b0),
+      .irq_software             (1'b0),
+      .irq_timer                (timer_irq),
+      .irq_external             (1'b0),
+      .irq_fast                 (15'h0000),
+      .irq_nm                   (1'b0),
 
-      .scramble_key_valid   (1'b0),
-      .scramble_key         ('0),
-      .scramble_nonce       ('0),
-      .scramble_req         (),
+      .scramble_key_valid       (1'b0),
+      .scramble_key             ('0),
+      .scramble_nonce           ('0),
+      .scramble_req             (),
 
       .debug_req,
-      .crash_dump           (),
-      .double_fault_seen    (),
+      .crash_dump               (),
+      .double_fault_seen        (),
 
-      .fetch_enable         ('1),
-      .alert_minor          (),
-      .alert_major_internal (),
-      .alert_major_bus      (),
-      .core_sleep           (),
+      .fetch_enable             (ibex_pkg::IbexMuBiOn),
+      .alert_minor              (),
+      .alert_major_internal     (),
+      .alert_major_bus          (),
+      .core_sleep               (),
 
-      .scan_rst_n           (1'b0));
+      .scan_rst_n               (1'b1),
+
+      .lockstep_cmp_en_o        (),
+
+      .data_req_shadow_o        (),
+      .data_we_shadow_o         (),
+      .data_be_shadow_o         (),
+      .data_addr_shadow_o       (),
+      .data_wdata_shadow_o      (),
+      .data_wdata_intg_shadow_o (),
+
+      .instr_req_shadow_o       (),
+      .instr_addr_shadow_o      ());
 
    axi4l_dm_top u_dm_top
      (.clk,

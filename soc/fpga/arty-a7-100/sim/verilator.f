@@ -15,19 +15,16 @@
 
 +incdir+../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl
 +incdir+../../../../ibex/vendor/lowrisc_ip/dv/sv/dv_utils
-../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_ram_1p_pkg.sv
-../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_secded_pkg.sv
 ../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_cipher_pkg.sv
 ../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_count_pkg.sv
-../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_util_pkg.sv
 ../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_mubi_pkg.sv
-../../../../ibex/dv/uvm/core_ibex/common/prim/prim_pkg.sv
-../../../../ibex/dv/uvm/core_ibex/common/prim/prim_clock_gating.sv
-../../../../ibex/dv/uvm/core_ibex/common/prim/prim_buf.sv
-../../../../ibex/dv/uvm/core_ibex/common/prim/prim_ram_1p.sv
-../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_generic_clock_gating.sv
-../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_generic_buf.sv
-../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_generic_ram_1p.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_secded_pkg.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim/rtl/prim_util_pkg.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_buf.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_clock_gating.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_pkg.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_ram_1p_pkg.sv
+../../../../ibex/vendor/lowrisc_ip/ip/prim_generic/rtl/prim_ram_1p.sv
 ../../../../ibex/rtl/ibex_pkg.sv
 ../../../../ibex/rtl/ibex_alu.sv
 ../../../../ibex/rtl/ibex_branch_predict.sv
